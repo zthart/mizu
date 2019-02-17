@@ -6,6 +6,7 @@ from flask import request
 from flask import session
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 from csh_ldap import CSHLDAP
 
@@ -23,6 +24,7 @@ if os.path.exists(os.path.join(os.getcwd(), 'config.py')):
 app.secret_key = app.config['SECRET_KEY']
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 from mizu.models import Machine
 from mizu.models import Item
@@ -41,4 +43,9 @@ from mizu.users import users_bp
 app.register_blueprint(drinks_bp)
 app.register_blueprint(items_bp)
 app.register_blueprint(users_bp)
+
+
+@app.route('/')
+def hello_world():
+    return 'hello world'
 
