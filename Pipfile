@@ -7,6 +7,10 @@ verify_ssl = true
 
 [packages]
 flask = "*"
+flask-pyoidc = "*"
+csh-ldap = "*"
+flask-sqlalchemy = "*"
+flask-migrate = "*"
 
 [requires]
 python_version = "3.7"
