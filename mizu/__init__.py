@@ -49,3 +49,13 @@ app.register_blueprint(users_bp)
 def hello_world():
     return 'hello world'
 
+@app.errorhandler(404)
+def handle_404(e):
+    error = {
+        "message": "What you're looking for does not exist, like a drink admin when drink is empty",
+        "error": str(e),
+        "errorCode": 404,
+    }
+
+    return jsonify(error), 404
+

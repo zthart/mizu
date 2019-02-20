@@ -12,3 +12,11 @@ from mizu import db
 
 drinks_bp = Blueprint('drinks_bp', __name__)
 
+@drinks_bp.route('/drinks/', methods=['GET'])
+def current_drinks():
+    pass
+
+@drinks_bp.route('/drinks/drop', methods=['POST'])
+def drop_drink():
+    pass
+

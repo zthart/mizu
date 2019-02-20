@@ -12,3 +12,11 @@ from mizu import db
 
 users_bp = Blueprint('users_bp', __name__)
 
+@users_bp.route('/users/', methods=['GET'])
+def list_users():
+    pass
+
+@users_bp.route('/users/credits', methods=['GET', 'POST'])
+def manage_credits():
+    pass
+
