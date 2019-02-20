@@ -17,7 +17,7 @@ from sqlalchemy import orm
 
 from mizu import db
 
-from mizu.errors import bad_headers, bad_params
+from mizu.errors import bad_params, bad_headers_content_type
 
 items_bp = Blueprint('items_bp', __name__)
 
@@ -37,8 +37,7 @@ def manage_items():
     elif request.method == 'POST':
         # Check headers
         if request.headers.get('Content-Type') != 'application/json':
-            return bad_headers('Invalid Content-Type - the body of your request should be \'application/json\'')
-
+            return bad_headers_content_type()
         body = request.json
 
         # Keep a list of unprovided params, makes our response nice and clear
@@ -54,9 +53,9 @@ def manage_items():
         try:
             price = int(body['price'])
             if price < 0:
-                raise ValueError('Item price must be positive');
-        except ValueError as e:
-            return bad_params('Ensure the item price is an integer - {}'.format(e))
+                raise ValueError();
+        except ValueError:
+            return bad_params('You cannot create a worthless item')
 
         name = body['name']
 
@@ -71,7 +70,7 @@ def manage_items():
         return jsonify(success), 201
     elif request.method == 'DELETE':
         if request.headers.get('Content-Type') != 'application/json':
-            return bad_headers('Invalid Content-Type - the body of your request should be \'application/json\'')
+            return bad_headers_content_type();
 
         body = request.json
 
@@ -100,7 +99,47 @@ def manage_items():
 
 @items_bp.route('/items/price', methods=['POST'])
 def update_item_price():
-    pass
+    if request.headers.get('Content-Type') != 'application/json':
+        return bad_params_content_type();
+
+    body = request.json
+
+    unprovided = []
+    if 'id' not in body:
+        unprovided.append('id')
+    if 'price' not in body:
+        unprovided.append('price')
+
+    if len(unprovided) > 0:
+        return bad_params('The following required parameters were not provided: {}'.format(', '.join(unprovided)))
+
+    try:
+        price = int(body['price'])
+        if price < 0:
+            raise ValueError()
+    except ValueError:
+        return bad_params('You cannot create a worthless item')
+
+    try:
+        item_id = int(body['id'])
+        if item_id < 0:
+            raise ValueError()
+        item = db.session.query(Item).filter(Item.id == item_id).\
+                  update({"price": price},synchronize_session=False)
+        if item < 1:
+            raise ValueError()
+    except ValueError:
+        return bad_params('Item ID vlaue provided was invalid, ensure that the ID being provide is attached to an item '
+                          'that is present in the system.')
+
+    db.session.commit()
+
+    item = db.session.query(Item).filter(Item.id == item_id).first()
+
+    success = {
+        'message': 'Item \'{}\' with ID {} updated to price {}'.format(item.name, item.id, item.price)
+    }
+    return jsonify(success), 200
 
 @items_bp.route('/items/name', methods=['POST'])
 def update_item_name():
