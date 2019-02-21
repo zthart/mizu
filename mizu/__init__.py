@@ -32,8 +32,8 @@ from mizu.models import Slot
 from mizu.models import Temp
 from mizu.models import Log
 
-# ldap = CSHLDAP(app.config['LDAP_BIND_DN'],
-#                app.config['LDAP_BIND_PW'])
+ldap = CSHLDAP(app.config['LDAP_BIND_DN'],
+               app.config['LDAP_BIND_PW'])
 
 
 from mizu.drinks import drinks_bp
