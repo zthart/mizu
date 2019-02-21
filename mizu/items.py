@@ -100,7 +100,7 @@ def manage_items():
 @items_bp.route('/items/price', methods=['POST'])
 def update_item_price():
     if request.headers.get('Content-Type') != 'application/json':
-        return bad_params_content_type();
+        return bad_headers_content_type();
 
     body = request.json
 
@@ -129,8 +129,8 @@ def update_item_price():
         if item < 1:
             raise ValueError()
     except ValueError:
-        return bad_params('Item ID vlaue provided was invalid, ensure that the ID being provide is attached to an item '
-                          'that is present in the system.')
+        return bad_params('Item ID value provided was invalid, ensure that the ID being provided is attached to an '
+                          'item that is present in the system.')
 
     db.session.commit()
 
@@ -143,5 +143,45 @@ def update_item_price():
 
 @items_bp.route('/items/name', methods=['POST'])
 def update_item_name():
-    pass
+    if request.headers.get('Content-Type') != 'application/json':
+        return bad_headers_content_type();
+
+    body = request.json
+
+    unprovided = []
+    if 'id' not in body:
+        unprovided.append('id')
+    if 'name' not in body:
+        unprovided.append('name')
+
+    if len(unprovided) > 0:
+        return bad_params('The following required parameters were not provided: {}'.format(', '.join(unprovided)))
+
+    if body['name'] == '':
+        return bad_params('An item cannot have an empty name')
+
+    try:
+        item_id = int(body['id'])
+        if item_id < 0:
+            raise ValueError()
+        item = db.session.query(Item).filter(Item.id == item_id).first()
+        if item is None:
+            raise ValueError
+        old_name = item.name
+        item = db.session.query(Item).filter(Item.id == item_id).\
+                  update({'name': body['name']}, synchronize_session=False)
+    except ValueError:
+        return bad_params('Item ID value provided was invalid, ensure that the ID being provided is attached to an '
+                          'item that is present in the system.')
+
+    db.session.commit()
+
+    item = db.session.query(Item).filter(Item.id == item_id).first()
+
+    success = {
+        'message': 'Item with ID {} renamed from \'{}\' to \'{}\''.format(item.id, old_name, item.name)
+    }
+
+    return jsonify(success), 200
+
 
