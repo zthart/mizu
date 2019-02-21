@@ -97,7 +97,7 @@ def manage_items():
         return jsonify(success), 200
             
 
-@items_bp.route('/items/price', methods=['POST'])
+@items_bp.route('/items/price', methods=['PUT'])
 def update_item_price():
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type();
@@ -141,7 +141,7 @@ def update_item_price():
     }
     return jsonify(success), 200
 
-@items_bp.route('/items/name', methods=['POST'])
+@items_bp.route('/items/name', methods=['PUT'])
 def update_item_name():
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type();
