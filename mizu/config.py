@@ -17,6 +17,6 @@ OIDC_CLIENT_SECRET = env.get('MIZU_OIDC_CLIENT_SECRET', '')
 
 LDAP_URL = env.get('MIZU_LDAP_URL', 'ldaps://ldap.csh.rit.edu:636')
 LDAP_BIND_DN = env.get('MIZU_BIND_DN',
-'krbprincipalname=drink/drink.csh.rit.edu@CSH.RIT.EDU,cn=services,cn=accounts,dc=csh,cd=rit,dc=edu')
+'krbprincipalname=drink/drink.csh.rit.edu@CSH.RIT.EDU,cn=services,cn=accounts,dc=csh,dc=rit,dc=edu')
 LDAP_BIND_PW = env.get('MIZU_BIND_PW', '')
 
