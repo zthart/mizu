@@ -14,7 +14,7 @@ now), or whether it would work with the new user management infrastructure, or w
 public api to sub-clients, etc.
 
 There were many things that were aging and dying in the previous technology, and replacements have been grafted into the
-system time and time again. Drink rewrites have been achieved in the past, but hopefull this one sticks.
+system time and time again. Drink rewrites have been achieved in the past, but hopefully this one sticks.
 
 ## When it will be done
 Any drink admin will tell you that this project is never complete. This implementation will be finished and in place
