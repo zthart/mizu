@@ -16,6 +16,8 @@ from mizu.models import Slot
 
 from mizu.errors import bad_params
 
+from mizu import app
+
 drinks_bp = Blueprint('drinks_bp', __name__)
 
 @drinks_bp.route('/drinks', methods=['GET'])
@@ -48,6 +50,7 @@ def current_drinks():
             machine_contents[str(slot.number)] = {
                 "name": slot_item.name,
                 "price": slot_item.price,
+                "id": slot_item.id,
             }
         response['machines'].update({machine[1]: machine_contents})
 
