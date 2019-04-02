@@ -117,3 +117,4 @@ dmypy.json
 
 .env
 data.db
+*.swp

@@ -20,3 +20,5 @@ LDAP_BIND_DN = env.get('MIZU_BIND_DN',
 'krbprincipalname=drink/drink.csh.rit.edu@CSH.RIT.EDU,cn=services,cn=accounts,dc=csh,dc=rit,dc=edu')
 LDAP_BIND_PW = env.get('MIZU_BIND_PW', '')
 
+MACHINE_API_TOKEN = env.get('MIZU_MACHINE_API_TOKEN', '')
+
