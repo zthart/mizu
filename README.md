@@ -5,6 +5,13 @@ this implementation of the drink server. Out with websockets and the Sunday prot
 implementation for the core of a project that has been a defining feature of the Computer Science House at RIT in
 various forms for more than two decades.
 
+## Related Projects
+
+- [Potion Seller](https://github.com/ramzallan/potion-seller) - A lightweight RESTful application for controlling the
+  CSH Drink Machines
+- [Tonic](https://github.com/ramzallan/tonic) - A modern web application to allow users to drop drinks from the CSH
+  Drink Machines
+
 ## Why it exists
 I know you're all disappointed that _yet another_ house service has been written in Python using Flask. I will be the
 first to say that **I'm sorry for this**. However, It's become apparent to me in my years of being a drink admin that
