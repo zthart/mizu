@@ -14,9 +14,11 @@ from mizu.models import Machine
 from mizu.models import Item
 from mizu.models import Slot
 
-from mizu.errors import bad_params
+from mizu.errors import bad_params, bad_headers_content_type
 
 from mizu import app
+
+import requests
 
 drinks_bp = Blueprint('drinks_bp', __name__)
 
@@ -62,5 +64,53 @@ def current_drinks():
 
 @drinks_bp.route('/drinks/drop', methods=['POST'])
 def drop_drink():
-    pass
+    if request.headers.get('Content-Type') != 'application/json':
+        return bad_headers_content_type()
+
+    body  = request.json
+
+    unprovided = []
+    if 'machine' not in body:
+        unprovided.append('machine')
+    if 'slot' not in body:
+        unprovided.append('slot')
+
+    if len(unprovided) > 0:
+        return bad_params('The following required parameters were not provided: {}'.format(
+            ', '.join(unprovided)
+        ))
+
+    machine = db.session.query(Machine).filter(Machine.name == body['machine']).first()
+    if machine is None:
+        return bad_params('The machine name \'{}\' is not a valid machine'.format(body['machine']))
+
+    slot = db.session.query(Slot).filter(Slot.number == body['slot'], Slot.machine == machine.id).first()
+    if slot is None:
+        return bad_params('The machine \'{}\' does not have a slot with id \'{}\''.format(
+            body['machine'],
+            body['slot']
+        ))
+
+    machine_hostname = '{}.csh.rit.edu'.format(machine.name)
+    request_endpoint = 'https://{}/drop'.format(machine_hostname)
+
+    body = {
+        "slot": slot.number
+    }
+
+    headers = {
+        'X-Auth-Token': app.config['MACHINE_API_TOKEN'],
+        'Content-Type': 'application/json'
+    }
+
+    # Do the thing
+    response = requests.post(request_endpoint, json=body, headers=headers)
+
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        return jsonify({"error": "Could not access slot for drop!", "errorCode": response.status_code}),\
+                       response.status_code
+
+    return jsonify({"message": "Drop successful!"}), response.status_code
 
