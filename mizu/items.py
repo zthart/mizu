@@ -17,24 +17,30 @@ from sqlalchemy import orm
 
 from mizu import db
 
+from mizu.auth import check_token
 from mizu.errors import bad_params, bad_headers_content_type
 
 items_bp = Blueprint('items_bp', __name__)
 
 
-@items_bp.route('/items', methods=['GET', 'POST', 'DELETE'])
+@items_bp.route('/items', methods=['GET'])
+@check_token()
+def get_items():
+    # Query for all items
+    items = db.session.query(Item).all()
+    items = [{'id': item.id, 'name': item.name, 'price': item.price} for item in items]
+    success = {
+        'message': 'Retrieved {} items'.format(len(items)),
+        'items': items
+    }
+    return jsonify(success), 200
+
+
+@items_bp.route('/items', methods=['POST', 'DELETE'])
+@check_token(admin_only=True)
 def manage_items():
     """ Route for retrieving, creating, and deleting items."""
-    if request.method == 'GET':
-        # Query for all items
-        items = db.session.query(Item).all()
-        items = [{'id': item.id, 'name': item.name, 'price': item.price} for item in items]
-        success = {
-            'message': 'Retrieved {} items'.format(len(items)),
-            'items': items
-        }
-        return jsonify(success), 200
-    elif request.method == 'POST':
+    if request.method == 'POST':
         # Check headers
         if request.headers.get('Content-Type') != 'application/json':
             return bad_headers_content_type()
@@ -95,9 +101,10 @@ def manage_items():
             'message': 'Item \'{}\' with ID {} successfully deleted'.format(item.name, item.id)
         }
         return jsonify(success), 200
-            
+
 
 @items_bp.route('/items/price', methods=['PUT'])
+@check_token(admin_only=True)
 def update_item_price():
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type();
@@ -142,6 +149,7 @@ def update_item_price():
     return jsonify(success), 200
 
 @items_bp.route('/items/name', methods=['PUT'])
+@check_token(admin_only=True)
 def update_item_name():
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type();
@@ -183,5 +191,4 @@ def update_item_name():
     }
 
     return jsonify(success), 200
-
 

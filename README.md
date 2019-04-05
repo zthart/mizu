@@ -5,6 +5,13 @@ this implementation of the drink server. Out with websockets and the Sunday prot
 implementation for the core of a project that has been a defining feature of the Computer Science House at RIT in
 various forms for more than two decades.
 
+## Documentation
+
+Developer documentation is hosted on Postman and can be found
+[here](https://documenter.getpostman.com/view/6712720/S1EJWLQW). Please keep in mind that this project is in development
+and the documentation may drift in and out of date. We will make an effort to keep it consistent with the current
+functionality of the server.
+
 ## Related Projects
 
 - [Potion Seller](https://github.com/ramzallan/potion-seller) - A lightweight RESTful application for controlling the

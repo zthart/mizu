@@ -35,6 +35,7 @@ from mizu.models import Log
 ldap = CSHLDAP(app.config['LDAP_BIND_DN'],
                app.config['LDAP_BIND_PW'])
 
+from mizu.auth import check_token
 
 from mizu.drinks import drinks_bp
 from mizu.items import items_bp

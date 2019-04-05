@@ -14,6 +14,8 @@ from mizu.models import Machine
 from mizu.models import Item
 from mizu.models import Slot
 
+from mizu.users import _manage_credits, _get_credits
+from mizu.auth import check_token
 from mizu.errors import bad_params, bad_headers_content_type
 
 from mizu import app
@@ -23,6 +25,7 @@ import requests
 drinks_bp = Blueprint('drinks_bp', __name__)
 
 @drinks_bp.route('/drinks', methods=['GET'])
+@check_token()
 def current_drinks():
     # optional request paremeter, the name of the machine to get stock information
     machine_name = request.args.get('machine', None)
@@ -63,7 +66,8 @@ def current_drinks():
     return jsonify(response), 200
 
 @drinks_bp.route('/drinks/drop', methods=['POST'])
-def drop_drink():
+@check_token(return_user_obj=True)
+def drop_drink(user = None):
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
 
@@ -91,6 +95,8 @@ def drop_drink():
             body['slot']
         ))
 
+    item = db.session.query(Item).filter(Item.id == slot.item).first()
+
     machine_hostname = '{}.csh.rit.edu'.format(machine.name)
     request_endpoint = 'https://{}/drop'.format(machine_hostname)
 
@@ -112,5 +118,9 @@ def drop_drink():
         return jsonify({"error": "Could not access slot for drop!", "errorCode": response.status_code}),\
                        response.status_code
 
-    return jsonify({"message": "Drop successful!"}), response.status_code
+    bal_before = _get_credits(user['preferred_username'])
+    new_balance = bal_before - item.price
+    _manage_credits(user['preferred_username'], new_balance)
+
+    return jsonify({"message": "Drop successful!", "drinkBalance": new_balance}), response.status_code
 
