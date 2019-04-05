@@ -65,13 +65,62 @@ def current_drinks():
 
     return jsonify(response), 200
 
+@drinks_bp.route('/drinks', methods=['PUT'])
+@check_token(admin_only=True)
+def update_drink():
+    if request.headers.get('Content-Type') != 'application/json':
+        return bad_headers_content_type()
+
+    body = request.json
+
+    unprovided = []
+    if 'machine' not in body:
+        unprovided.append('machine')
+    if 'slot' not in body:
+        unprovided.append('slot')
+    if 'item_id' not in body:
+        unprovided.append('item_id')
+
+    if len(unprovided) > 0:
+        return bad_params('The following required parameters were not provided: {}'.format(
+            ', '.join(unprovided)
+        ))
+
+    machine = db.session.query(Machine).filter(Machine.name == body['machine']).first()
+    if machine is None:
+        return bad_params('The machine \'{}\' is not a valid machine'.format(body['machine']))
+
+    slot = db.session.query(Slot).filter(Slot.number == body['slot'], Slot.machine == machine.id).first()
+    if slot is None:
+        return bad_params('The machine \'{}\' does not have a slot with id \'{}\''.format(
+            body['machine'],
+            body['slot']
+        ))
+
+    item = db.session.query(Item).filter(Item.id == body['item_id']).first()
+    if item is None:
+        return bad_params('The id \'{}\' is not associated with any item present in the system'.format(
+            body['item_id']
+        ))
+
+    slot.item = item.id
+    db.session.commit()
+
+    success = {
+        "message": "Slot {} in \'{}\' now contains item \'{}\'".format(slot.number, machine.name, item.name)
+    }
+
+    return jsonify(success), 200
+
 @drinks_bp.route('/drinks/drop', methods=['POST'])
 @check_token(return_user_obj=True)
 def drop_drink(user = None):
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
 
-    body  = request.json
+    bal_before = _get_credits(user['preferred_username'])
+
+    body = request.json
 
     unprovided = []
     if 'machine' not in body:
@@ -97,6 +146,13 @@ def drop_drink(user = None):
 
     item = db.session.query(Item).filter(Item.id == slot.item).first()
 
+    if bal_before < item.price:
+        response = {
+            "error": "The user \'{}\' does not have a sufficient drinkBalance",
+            "errorCode": 402
+        }
+        return jsonify(response), 402
+
     machine_hostname = '{}.csh.rit.edu'.format(machine.name)
     request_endpoint = 'https://{}/drop'.format(machine_hostname)
 
@@ -118,7 +174,6 @@ def drop_drink(user = None):
         return jsonify({"error": "Could not access slot for drop!", "errorCode": response.status_code}),\
                        response.status_code
 
-    bal_before = _get_credits(user['preferred_username'])
     new_balance = bal_before - item.price
     _manage_credits(user['preferred_username'], new_balance)
 
