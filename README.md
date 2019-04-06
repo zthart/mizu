@@ -1,5 +1,10 @@
 # Mizu: The RESTful Drink Server
 
+Mizu is the only _debatably-modern_ Drink Server written in Python using Flask, ideal for consumption by CSHers
+
+![A recruiter told me once their co-worker found this reference funny, so I'm rolling with it](https://user-images.githubusercontent.com/4873335/55663141-d2ab9480-57e8-11e9-8a2d-472a0a3994ed.jpg)
+
+
 Mizu (水) is the Japanese Kanji meaning water. Water is clean and clear, and so too have we strived for clarity in
 this implementation of the drink server. Out with websockets and the Sunday protocol, in with a simple and clean
 implementation for the core of a project that has been a defining feature of the Computer Science House at RIT in
