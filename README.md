@@ -1,4 +1,6 @@
 # Mizu: The RESTful Drink Server
+![GitHub](https://img.shields.io/github/license/zthart/mizu.svg) 
+![pyVersion](https://img.shields.io/badge/python-3.7-blue.svg)
 
 Mizu is the only _debatably-modern_ Drink Server written in Python using Flask, ideal for consumption by CSHers
 
