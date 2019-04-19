@@ -41,3 +41,21 @@ system time and time again. Drink rewrites have been achieved in the past, but h
 Any drink admin will tell you that this project is never complete. This implementation will be finished and in place
 when it outperforms the current implementation.
 
+
+## Developing
+
+This project uses `pipenv` to mange its dependencies. To set this project up for development, run
+
+```shell
+$ pipenv install --dev --skip-lock
+```
+
+### Non-python dependencies
+You will need to be on a machine that has the development headers for ldap (maybe also sasl), libpq/postgres, and ssl -
+if you are on MacOS, you may need to export the following environment variables to get the installation to work
+
+```shell
+$ export LDFLAGS="-L/usr/local/opt/openssl/lib"
+$ export CPPFLAGS="-I/usr/local/opt/openssl/include"
+```
+
