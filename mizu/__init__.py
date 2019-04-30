@@ -62,6 +62,6 @@ def handle_404(e):
 
 @app.after_request
 def allow_cors(response):
-    response.headers.update({'Access-Control-Allow-Origin': '*'})
+    response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
