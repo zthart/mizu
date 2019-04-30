@@ -63,5 +63,6 @@ def handle_404(e):
 @app.after_request
 def allow_cors(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
