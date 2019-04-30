@@ -60,3 +60,8 @@ def handle_404(e):
 
     return jsonify(error), 404
 
+@app.after_request
+def allow_cors(response):
+    response.headers.update({'Access-Control-Allow-Origin': '*'})
+    return response
+
