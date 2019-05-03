@@ -166,7 +166,13 @@ def drop_drink(user = None):
     }
 
     # Do the thing
-    response = requests.post(request_endpoint, json=body, headers=headers)
+    try:
+        response = requests.post(request_endpoint, json=body, headers=headers)
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            "error": "Could not contact drink machine for drop!",
+            "errorCode": 500
+        }), 500
 
     try:
         response.raise_for_status()
