@@ -36,7 +36,7 @@ def get_items():
     return jsonify(success), 200
 
 
-@items_bp.route('/items', methods=['POST', 'DELETE'])
+@items_bp.route('/items', methods=['POST', 'PUT', 'DELETE'])
 @check_token(admin_only=True)
 def manage_items():
     """ Route for retrieving, creating, and deleting items."""
@@ -99,6 +99,70 @@ def manage_items():
 
         success = {
             'message': 'Item \'{}\' with ID {} successfully deleted'.format(item.name, item.id)
+        }
+        return jsonify(success), 200
+    elif request.method == 'PUT':
+        if request.headers.get('Content-Type') != 'application/json':
+            return bad_headers_content_type()
+
+        body = request.json
+
+        if 'id' not in body:
+            return bad_params('An Item ID must be provided to update')
+
+        if 'price' not in body and 'name' not in body:
+            return bad_params('The name, price, or both values of an item must be provided to update')
+
+        updates = {}
+
+        if 'price' in body:
+            try:
+                price = int(body['price'])
+                if price < 0:
+                    raise ValueError()
+            except ValueError:
+                return bad_params('You cannot create a worthless item')
+
+            updates['price'] = price
+
+        if 'name' in body:
+            if body['name'] == '':
+                return bad_params('An item cannot have an empty name')
+
+            updates['name'] = str(body['name'])
+
+        try:
+            item_id = int(body['id'])
+            if item_id < 0:
+                raise ValueError()
+            item = db.session.query(Item).filter(Item.id == item_id).first()
+            if item is None:
+                raise ValueError()
+
+            old_name = item.name
+            old_price = item.price
+
+            item = db.session.query(Item).filter(Item.id == item_id).\
+                      update(updates,synchronize_session=False)
+            if item < 1:
+                raise ValueError()
+        except ValueError:
+            return bad_params('Item ID value provided was invalid, ensure that the ID being provided is attached to an '
+                              'item that is present in the system.')
+
+        db.session.commit()
+
+        item = db.session.query(Item).filter(Item.id == item_id).first()
+
+        success = {
+            'message': 'Item ID {} was \'{}\' for {} credits, now \'{}\' for {} credits'.format(
+                item.id, old_name, old_price, item.name, item.price
+            ),
+            'item': {
+                'name': item.name,
+                'price': item.price,
+                'id': item.id,
+            }
         }
         return jsonify(success), 200
 
