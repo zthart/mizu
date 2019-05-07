@@ -14,7 +14,7 @@ class Machine(db.Model):
     __tablename__ = 'machines'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Text, nullable=False)
+    name = Column(Text, unique=True, nullable=False)
 
     def __init__(self, name):
         self.name = name

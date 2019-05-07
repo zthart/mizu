@@ -40,11 +40,12 @@ from mizu.auth import check_token
 from mizu.drinks import drinks_bp
 from mizu.items import items_bp
 from mizu.users import users_bp
+from mizu.slots import slots_bp
 
 app.register_blueprint(drinks_bp)
 app.register_blueprint(items_bp)
 app.register_blueprint(users_bp)
-
+app.register_blueprint(slots_bp)
 
 @app.route('/')
 def hello_world():

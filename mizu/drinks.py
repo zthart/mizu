@@ -49,14 +49,18 @@ def current_drinks():
     }
     for machine in machines:
         machine_slots = db.session.query(Slot).filter(Slot.machine == machine[0]).all()
-        machine_contents = {}
+        machine_contents = {'id': machine[0], 'slots': []}
         for slot in machine_slots:
             slot_item = db.session.query(Item).filter(Item.id == slot.item).first()
-            machine_contents[str(slot.number)] = {
-                "name": slot_item.name,
-                "price": slot_item.price,
-                "id": slot_item.id,
-            }
+            machine_contents['slots'].append({
+                "number": slot.number,
+                "active": slot.active,
+                "item": {
+                    "name": slot_item.name,
+                    "price": slot_item.price,
+                    "id": slot_item.id,
+                },
+            })
         response['machines'].update({machine[1]: machine_contents})
 
     response['message'] = 'Successfully retrieved machine contents for {}'.format(
@@ -65,52 +69,6 @@ def current_drinks():
 
     return jsonify(response), 200
 
-@drinks_bp.route('/drinks', methods=['PUT'])
-@check_token(admin_only=True)
-def update_drink():
-    if request.headers.get('Content-Type') != 'application/json':
-        return bad_headers_content_type()
-
-    body = request.json
-
-    unprovided = []
-    if 'machine' not in body:
-        unprovided.append('machine')
-    if 'slot' not in body:
-        unprovided.append('slot')
-    if 'item_id' not in body:
-        unprovided.append('item_id')
-
-    if len(unprovided) > 0:
-        return bad_params('The following required parameters were not provided: {}'.format(
-            ', '.join(unprovided)
-        ))
-
-    machine = db.session.query(Machine).filter(Machine.name == body['machine']).first()
-    if machine is None:
-        return bad_params('The machine \'{}\' is not a valid machine'.format(body['machine']))
-
-    slot = db.session.query(Slot).filter(Slot.number == body['slot'], Slot.machine == machine.id).first()
-    if slot is None:
-        return bad_params('The machine \'{}\' does not have a slot with id \'{}\''.format(
-            body['machine'],
-            body['slot']
-        ))
-
-    item = db.session.query(Item).filter(Item.id == body['item_id']).first()
-    if item is None:
-        return bad_params('The id \'{}\' is not associated with any item present in the system'.format(
-            body['item_id']
-        ))
-
-    slot.item = item.id
-    db.session.commit()
-
-    success = {
-        "message": "Slot {} in \'{}\' now contains item \'{}\'".format(slot.number, machine.name, item.name)
-    }
-
-    return jsonify(success), 200
 
 @drinks_bp.route('/drinks/drop', methods=['POST'])
 @check_token(return_user_obj=True)
