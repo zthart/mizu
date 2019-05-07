@@ -45,11 +45,11 @@ def current_drinks():
         machines.append((machine.id, machine.name, machine.display_name))
 
     response = {
-        "machines": {}
+        "machines": []
     }
     for machine in machines:
         machine_slots = db.session.query(Slot).filter(Slot.machine == machine[0]).all()
-        machine_contents = {'id': machine[0], 'display_name': machine[2], 'slots': []}
+        machine_contents = {'id': machine[0], 'name': machine[1], 'display_name': machine[2], 'slots': []}
         for slot in machine_slots:
             slot_item = db.session.query(Item).filter(Item.id == slot.item).first()
             machine_contents['slots'].append({
@@ -61,7 +61,7 @@ def current_drinks():
                     "id": slot_item.id,
                 },
             })
-        response['machines'].update({machine[1]: machine_contents})
+        response['machines'].append(machine_contents)
 
     response['message'] = 'Successfully retrieved machine contents for {}'.format(
         ', '.join([machine[1] for machine in machines])
