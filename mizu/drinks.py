@@ -33,7 +33,7 @@ def current_drinks():
     # assemble an array of (id, name) tuples
     if machine_name is None:
         machines = db.session.query(Machine).all()
-        machines = [(machine.id, machine.name) for machine in machines]
+        machines = [(machine.id, machine.name, machine.display_name) for machine in machines]
     else:
         # We're given a machine name
         machine = db.session.query(Machine).filter(Machine.name == machine_name).first()
@@ -42,14 +42,14 @@ def current_drinks():
             return bad_params('The provided machine name \'{}\' is not a valid machine'.format(machine_name))
 
         machines = []
-        machines.append((machine.id, machine.name))
+        machines.append((machine.id, machine.name, machine.display_name))
 
     response = {
         "machines": {}
     }
     for machine in machines:
         machine_slots = db.session.query(Slot).filter(Slot.machine == machine[0]).all()
-        machine_contents = {'id': machine[0], 'slots': []}
+        machine_contents = {'id': machine[0], 'display_name': machine[2], 'slots': []}
         for slot in machine_slots:
             slot_item = db.session.query(Item).filter(Item.id == slot.item).first()
             machine_contents['slots'].append({

@@ -15,9 +15,11 @@ class Machine(db.Model):
 
     id = Column(Integer, primary_key=True)
     name = Column(Text, unique=True, nullable=False)
+    display_name = Column(Text, server_default="New Machine", nullable=False)
 
-    def __init__(self, name):
+    def __init__(self, name, display_name):
         self.name = name
+        self.display_name = display_name
 
 
 class Item(db.Model):
