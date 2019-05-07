@@ -5,6 +5,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy import Float
 from sqlalchemy import Text
+from sqlalchemy import Boolean
 
 from mizu import db
 
@@ -37,6 +38,7 @@ class Slot(db.Model):
     machine = Column(ForeignKey('machines.id'), primary_key=True)
     number = Column(Integer, primary_key = True)
     item = Column(ForeignKey('items.id'), nullable=True)
+    active = Column(Boolean, default=False, server_default="false", nullable=False)
 
     def __init__(self, machine, number):
         self.machine = machine
