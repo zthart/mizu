@@ -42,6 +42,8 @@ from mizu.items import items_bp
 from mizu.users import users_bp
 from mizu.slots import slots_bp
 
+from mizu.data_adapters import DataAdapterABC
+
 app.register_blueprint(drinks_bp)
 app.register_blueprint(items_bp)
 app.register_blueprint(users_bp)
