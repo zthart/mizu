@@ -1,30 +1,87 @@
 from . import DataAdapterABC
 
+from mizu import mock_db
+
+from mizu.models import Item
+from mizu.models import Machine
+from mizu.models import Slot
+
 class MockAdapter(DataAdapterABC):
-    def __init__(self):
+
+    @staticmethod
+    def get_machine(machine_id):
         pass
 
-    def get_machine(self, machine_id):
+    @staticmethod
+    def get_machines():
         pass
 
-    def get_machines(self):
-        pass
+    @staticmethod
+    def get_items():
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+        return mock_db['Items']
 
-    def get_items(self):
-        pass
+    @staticmethod
+    def get_item(item_id):
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+        
+        r_item = None
+        for item in mock_db['Items']:
+            if item['id'] == item_id:
+                r_item = item
+                break
 
-    def get_item(self, item_id):
-        pass
+        return r_item
+    
+    @staticmethod
+    def create_item(item_name, item_price):
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+        
+        item_ids = [item['id'] for item in mock_db['Items']]
+        item_ids.sort(reverse=True)
 
-    def create_item(self, item_name, item_price):
-        pass
+        latest_id = item_ids[0]
+        new_item = {'id': latest_id+1, 'name': item_name, 'price': item_price}
+        mock_db['Items'].append(new_item)
+        return new_item
+    
+    @staticmethod
+    def delete_item(item_id):
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
 
-    def delete_item(self, item_id):
-        pass
+        for idx, item in enumerate(mock_db['Items']):
+            if item['id'] == item_id:
+                del mock_db['Items'][idx]
+                return True
 
-    def update_item(self, item_id, item_name=None, item_price=None):
-        pass
+        return False
 
-    def update_slot_status(self, machine_id, slot_num):
+    @staticmethod
+    def update_item(item_id, item_name=None, item_price=None):
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+
+        update_idx = None
+        for idx, item in enumerate(mock_db['Items']):
+            if item['id'] == item_id:
+                update_idx = idx
+                break
+
+        if update_idx is None:
+            raise ValueError('The ID provided does not correspond to an item in the system.')
+
+        if item_name:
+            mock_db['Items'][update_idx]['name'] = item_name
+        if item_price:
+            mock_db['Items'][update_idx]['price'] = item_price
+
+        return mock_db['Items'][update_idx]
+
+    @staticmethod
+    def update_slot_status(machine_id, slot_num):
         pass
 

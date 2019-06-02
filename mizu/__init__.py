@@ -1,4 +1,5 @@
 import os
+import json
 
 from flask import Flask
 from flask import jsonify
@@ -26,6 +27,11 @@ app.secret_key = app.config['SECRET_KEY']
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+mock_db = None
+if os.path.exists(os.path.join(os.getcwd(), 'mock.json')):
+    with open('mock.json', 'r') as f:
+        mock_db = json.load(f)
+
 from mizu.models import Machine
 from mizu.models import Item
 from mizu.models import Slot
@@ -42,7 +48,7 @@ from mizu.items import items_bp
 from mizu.users import users_bp
 from mizu.slots import slots_bp
 
-from mizu.data_adapters import DataAdapterABC
+from mizu.data_adapters import SqlAlchemyAdapter, MockAdapter
 
 app.register_blueprint(drinks_bp)
 app.register_blueprint(items_bp)
