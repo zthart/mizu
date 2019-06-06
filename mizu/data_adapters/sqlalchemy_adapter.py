@@ -11,12 +11,32 @@ from sqlalchemy import orm
 class SqlAlchemyAdapter(DataAdapterABC):
 
     @staticmethod
-    def get_machines(machine_id):
-        pass
+    def get_machine(machine_name):
+        """ Query the SQL Alchemy connected DB for a machine with the provided name
+
+        Returns:
+            dict: a ``mizu.models.Machine`` object serialized as a python dict/json, or ``None`` if no 
+                such machine can be found
+        """
+        machine = SqlAlchemyAdapter._get_machine(machine_name)
+        if machine is None:
+            return machine
+        else:
+            return SqlAlchemyAdapter._serialize_machine(machine)
 
     @staticmethod
     def get_machines():
-        pass
+        """ Query the SQL Alchemy Connected DB for all Machines.
+
+        Returns:
+            list: a list of ``Machine`` objects serialized as json
+        """
+        machines = db.session.query(Machine).all()
+        list_machines = []
+        for machine in machines:
+            list_machines.append(SqlAlchemyAdapter._serialize_machine(machine))
+
+        return list_machines
 
     @staticmethod 
     def get_items():
@@ -28,7 +48,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
         db_items = db.session.query(Item).all()
         list_items = []
         for item in db_items:
-            list_items.append(SqlAlchemyAdapter._serialize_to_json(item))
+            list_items.append(SqlAlchemyAdapter._serialize_item(item))
         
         return list_items
 
@@ -43,7 +63,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
         if item is None:
             return item
         else:
-            return SqlAlchemyAdapter._serialize_to_json(item)
+            return SqlAlchemyAdapter._serialize_item(item)
 
     @staticmethod
     def create_item(item_name, item_price):
@@ -56,7 +76,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
         db.session.add(new_item)
         db.session.commit()
 
-        return SqlAlchemyAdapter._serialize_to_json(new_item)
+        return SqlAlchemyAdapter._serialize_item(new_item)
 
     @staticmethod
     def delete_item(item_id):
@@ -100,6 +120,27 @@ class SqlAlchemyAdapter(DataAdapterABC):
         return SqlAlchemyAdapter.get_item(item_id)
 
     @staticmethod
+    def get_slots_in_machine(machine_name):
+        """ Retrieve a list of slot objects from a machine
+
+        Returns:
+            list: a list of ``mizu.models.Slot`` objects serialized as python dicts / JSON
+
+        Raises:
+            ValueError: If the machine name provided does not correspond to any kown machine
+        """
+        machine = SqlAlchemyAdapter._get_machine(machine_name)
+        if machine is None:
+            raise ValueError('The machine name provided does not correspond to any known machine.')
+
+        slots = db.session.query(Slot).filter(Slot.machine == machine.id).all()
+        list_slots = []
+        for slot in slots:
+            list_slots.append(SqlAlchemyAdapter._serialize_slot(slot))
+
+        return list_slots
+
+    @staticmethod
     def update_slot_status(machine_id, slot_num):
         pass
 
@@ -107,16 +148,40 @@ class SqlAlchemyAdapter(DataAdapterABC):
     # Private / Helper functions
 
     @staticmethod
-    def _serialize_to_json(item):
+    def _serialize_item(item):
         """ Serialize a ``mizu.models.Item`` into a python dict / JSON """ 
         return {
             'id': item.id,
             'name': item.name,
             'price': item.price
         }
+
+    @staticmethod
+    def _serialize_machine(machine):
+        """ Serialize a ``mizu.models.Machine`` into a python dict / JSON """
+        return {
+            'id': machine.id,
+            'name': machine.name,
+            'display_name': machine.display_name
+        }
+
+    @staticmethod
+    def _serialize_slot(slot):
+        """ Serialize a ``mizu.models.Slot`` into a python dict / JSON """
+        return {
+            'machine': slot.machine,
+            'number': slot.number,
+            'item': slot.item,
+            'active': slot.active
+        }
     
     @staticmethod
     def _get_item(item_id):
         """ Get a ``mizu.models.Item`` object by ID """
         return db.session.query(Item).filter(Item.id == item_id).first()
+
+    @staticmethod
+    def _get_machine(machine_name):
+        """ Get a ``mizu.models.Machine`` object by name """
+        return db.session.query(Machine).filter(Machine.name == machine_name).first()
 

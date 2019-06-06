@@ -9,12 +9,24 @@ from mizu.models import Slot
 class MockAdapter(DataAdapterABC):
 
     @staticmethod
-    def get_machine(machine_id):
-        pass
+    def get_machine(machine_name):
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+
+        r_machine = None
+        for machine in mock_db['Machines']:
+            if machine['name'] == machine_name:
+                r_machine = machine
+                break
+
+        return r_machine
 
     @staticmethod
     def get_machines():
-        pass
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+
+        return mock_db['Machines']
 
     @staticmethod
     def get_items():
@@ -80,6 +92,22 @@ class MockAdapter(DataAdapterABC):
             mock_db['Items'][update_idx]['price'] = item_price
 
         return mock_db['Items'][update_idx]
+
+    @staticmethod
+    def get_slots_in_machine(machine_name):
+        if mock_db is None:
+            raise ValueError('No mock dataset was found at app start, mocking is disabled')
+
+        machine = MockAdapter.get_machine(machine_name)
+        if machine is None:
+            raise ValueError('The Machine name provided did not correspond to any known machine.')
+
+        list_slots = []
+        for slot in mock_db['Slots']:
+            if slot['machine'] == machine['id']:
+                list_slots.append(slot)
+
+        return list_slots
 
     @staticmethod
     def update_slot_status(machine_id, slot_num):

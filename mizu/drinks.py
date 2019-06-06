@@ -17,6 +17,7 @@ from mizu.models import Slot
 from mizu.users import _manage_credits, _get_credits
 from mizu.auth import check_token
 from mizu.errors import bad_params, bad_headers_content_type
+from mizu.data_adapters import get_adapter
 
 from mizu import app
 
@@ -25,46 +26,46 @@ import requests
 drinks_bp = Blueprint('drinks_bp', __name__)
 
 @drinks_bp.route('/drinks', methods=['GET'])
+@get_adapter
 @check_token()
-def current_drinks():
+def current_drinks(adapter):
     # optional request paremeter, the name of the machine to get stock information
     machine_name = request.args.get('machine', None)
 
     # assemble an array of (id, name) tuples
     if machine_name is None:
-        machines = db.session.query(Machine).all()
-        machines = [(machine.id, machine.name, machine.display_name) for machine in machines]
+        machines = adapter.get_machines()
     else:
         # We're given a machine name
-        machine = db.session.query(Machine).filter(Machine.name == machine_name).first()
+        machine = adapter.get_machine(machine_name)
 
         if machine is None:
             return bad_params('The provided machine name \'{}\' is not a valid machine'.format(machine_name))
 
         machines = []
-        machines.append((machine.id, machine.name, machine.display_name))
+        machines.append(machine)
 
     response = {
         "machines": []
     }
     for machine in machines:
-        machine_slots = db.session.query(Slot).filter(Slot.machine == machine[0]).all()
-        machine_contents = {'id': machine[0], 'name': machine[1], 'display_name': machine[2], 'slots': []}
+        machine_slots = adapter.get_slots_in_machine(machine['name'])
+        machine_contents = {'id': machine['id'], 'name': machine['name'], 'display_name': machine['display_name'], 'slots': []}
         for slot in machine_slots:
-            slot_item = db.session.query(Item).filter(Item.id == slot.item).first()
+            slot_item = adapter.get_item(slot['item'])
             machine_contents['slots'].append({
-                "number": slot.number,
-                "active": slot.active,
+                "number": slot['number'],
+                "active": slot['active'],
                 "item": {
-                    "name": slot_item.name,
-                    "price": slot_item.price,
-                    "id": slot_item.id,
+                    "name": slot_item['name'],
+                    "price": slot_item['price'],
+                    "id": slot_item['id'],
                 },
             })
         response['machines'].append(machine_contents)
 
     response['message'] = 'Successfully retrieved machine contents for {}'.format(
-        ', '.join([machine[1] for machine in machines])
+        ', '.join([machine['name'] for machine in machines])
     )
 
     return jsonify(response), 200

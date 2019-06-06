@@ -4,8 +4,8 @@ class DataAdapterABC(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_machine(machine_id):
-        """ Get a machine object with the provided ID """
+    def get_machine(machine_name):
+        """ Get a machine object with the provided name """
         pass
 
     @staticmethod
@@ -42,6 +42,12 @@ class DataAdapterABC(ABC):
     @abstractmethod
     def update_item(item_id, item_name=None, item_price=None):
         """ Update the name and/or price of the item with the provided ID """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_slots_in_machine(machine_name):
+        """ Get the slots in a machine with the provided name """
         pass
 
     @staticmethod
