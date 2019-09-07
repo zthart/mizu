@@ -1,18 +1,29 @@
 from . import DataAdapterABC
 
+from functools import wraps
+
 from mizu import mock_db
 
 from mizu.models import Item
 from mizu.models import Machine
 from mizu.models import Slot
 
-class MockAdapter(DataAdapterABC):
 
-    @staticmethod
-    def get_machine(machine_name):
+def check_dataset(func):
+    ''' Simple decorator to make sure that calls to the mock adapter when no mock data is present don't explode. '''
+    @wraps(func)
+    def wrapped_function(*args, **kwargs):
         if mock_db is None:
             raise ValueError('No mock dataset was found at app start, mocking is disabled')
 
+        return func(*args, **kwargs)
+    return wrapped_function 
+
+class MockAdapter(DataAdapterABC):
+        
+    @staticmethod
+    @check_dataset
+    def get_machine(machine_name):
         r_machine = None
         for machine in mock_db['Machines']:
             if machine['name'] == machine_name:
@@ -22,23 +33,18 @@ class MockAdapter(DataAdapterABC):
         return r_machine
 
     @staticmethod
+    @check_dataset
     def get_machines():
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
-
         return mock_db['Machines']
 
     @staticmethod
+    @check_dataset
     def get_items():
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
         return mock_db['Items']
 
     @staticmethod
+    @check_dataset
     def get_item(item_id):
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
-        
         r_item = None
         for item in mock_db['Items']:
             if item['id'] == item_id:
@@ -48,10 +54,8 @@ class MockAdapter(DataAdapterABC):
         return r_item
     
     @staticmethod
+    @check_dataset
     def create_item(item_name, item_price):
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
-        
         item_ids = [item['id'] for item in mock_db['Items']]
         item_ids.sort(reverse=True)
 
@@ -61,10 +65,8 @@ class MockAdapter(DataAdapterABC):
         return new_item
     
     @staticmethod
+    @check_dataset
     def delete_item(item_id):
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
-
         for idx, item in enumerate(mock_db['Items']):
             if item['id'] == item_id:
                 del mock_db['Items'][idx]
@@ -73,10 +75,8 @@ class MockAdapter(DataAdapterABC):
         return False
 
     @staticmethod
+    @check_dataset
     def update_item(item_id, item_name=None, item_price=None):
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
-
         update_idx = None
         for idx, item in enumerate(mock_db['Items']):
             if item['id'] == item_id:
@@ -94,10 +94,8 @@ class MockAdapter(DataAdapterABC):
         return mock_db['Items'][update_idx]
 
     @staticmethod
+    @check_dataset
     def get_slots_in_machine(machine_name):
-        if mock_db is None:
-            raise ValueError('No mock dataset was found at app start, mocking is disabled')
-
         machine = MockAdapter.get_machine(machine_name)
         if machine is None:
             raise ValueError('The Machine name provided did not correspond to any known machine.')
@@ -112,4 +110,29 @@ class MockAdapter(DataAdapterABC):
     @staticmethod
     def update_slot_status(machine_id, slot_num):
         pass
+
+
+    @staticmethod
+    @check_dataset
+    def get_user(uid=None):
+        if uid is None:
+            return mock_db['Users']
+        else:
+            for user in mock_db['Users']:
+                if user['uid'] == uid:
+                    return user
+
+            # Using Keyerror to maintain compat with CSH Ldap Lib
+            raise KeyError('The requested user does not exist')
+
+    @staticmethod
+    @check_dataset
+    def update_user_balance(uid, balance):
+        for user in mock_db['Users']:
+            if user['uid'] == uid:
+                old_balance = user['drinkBalance']
+                user['drinkBalance'] = balance
+                return int(old_balance), int(balance)
+        # Using KeyError to maintain compat with CSH Ldap Lib
+        raise KeyError('The request user does not exist')
 

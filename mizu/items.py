@@ -32,7 +32,16 @@ items_bp = Blueprint('items_bp', __name__)
 @check_token()
 def get_items(adapter):
     """ Query for all items """
-    items = adapter.get_items()
+
+    try:
+        items = adapter.get_items()
+    except ValueError as e:
+        error = {
+            'message': str(e),
+            'errorCode': 404,
+        }
+
+        return jsonify(error), 404
 
     success = {
         'message': 'Retrieved {} items'.format(len(items)),
