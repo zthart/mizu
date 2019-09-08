@@ -128,19 +128,23 @@ def drop_drink(adapter, user = None):
             ', '.join(unprovided)
         ))
 
-    machine = db.session.query(Machine).filter(Machine.name == body['machine']).first()
+    machine = adapter.get_machine(body['machine'])
     if machine is None:
         return bad_params('The machine name \'{}\' is not a valid machine'.format(body['machine']))
 
-    slot = db.session.query(Slot).filter(Slot.number == body['slot'], Slot.machine == machine.id).first()
+    slot = adapter.get_slot_in_machine(machine['name'], body['slot'])
     if slot is None:
         return bad_params('The machine \'{}\' does not have a slot with id \'{}\''.format(
             body['machine'],
             body['slot']
         ))
 
+<<<<<<< HEAD
     logger.debug('Drop request is valid')
 
+=======
+    
+>>>>>>> f3326b9... partial mocking within /drinks/drop
     slot_status = _get_machine_status(body['machine'])
     if slot_status[body['slot']-1]['empty']:  # slots are 1 indexed
         return jsonify({
@@ -148,7 +152,7 @@ def drop_drink(adapter, user = None):
             "errorCode": 400
         }), 400
 
-    item = db.session.query(Item).filter(Item.id == slot.item).first()
+    item = adapter.get_item(slot['item'])
 
     if bal_before < item.price:
         response = {

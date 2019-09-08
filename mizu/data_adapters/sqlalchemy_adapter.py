@@ -141,6 +141,16 @@ class SqlAlchemyAdapter(DataAdapterABC):
         return list_slots
 
     @staticmethod
+    def get_slot_in_machine(machine_name, slot_num):
+        slots = get_slots_in_machine(machine_name)
+
+        for slot in slots:
+            if slot['number'] == slot_num:
+                return slot
+
+        return None
+
+    @staticmethod
     def update_slot_status(machine_id, slot_num):
         pass
 

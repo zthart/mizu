@@ -108,6 +108,16 @@ class MockAdapter(DataAdapterABC):
         return list_slots
 
     @staticmethod
+    @check_dataset
+    def get_slot_in_machine(machine_name, slot_num):
+        slots = get_slot_in_machine(mahcine_name)
+        for slot in slots:
+            if slot['number'] == slot_num:
+                return slot
+
+        return None
+
+    @staticmethod
     def update_slot_status(machine_id, slot_num):
         pass
 
