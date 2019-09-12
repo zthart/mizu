@@ -69,6 +69,16 @@ def handle_404(e):
 
     return jsonify(error), 404
 
+@app.errorhandler(500)
+def handle_500(e):
+    error = {
+        "message": "The drink server encountered an error, it was more than likely your fault",
+        "error": str(e),
+        "errorCode": 500,
+    }
+
+    return jsonify(error), 500
+
 @app.after_request
 def allow_cors(response):
     response.headers['Access-Control-Allow-Origin'] = '*'

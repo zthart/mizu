@@ -91,8 +91,9 @@ def current_drinks(adapter):
 
 
 @drinks_bp.route('/drinks/drop', methods=['POST'])
+@get_adapter
 @check_token(return_user_obj=True)
-def drop_drink(user = None):
+def drop_drink(adapter, user = None):
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
 
@@ -168,7 +169,7 @@ def drop_drink(user = None):
                        response.status_code
 
     new_balance = bal_before - item.price
-    _manage_credits(user['preferred_username'], new_balance)
+    _manage_credits(user['preferred_username'], new_balance, adapter)
 
     return jsonify({"message": "Drop successful!", "drinkBalance": new_balance}), response.status_code
 
