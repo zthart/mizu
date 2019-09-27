@@ -16,6 +16,7 @@ from mizu.models import Item
 from mizu.auth import check_token
 from mizu.errors import bad_params, bad_headers_content_type
 
+from mizu import logger
 from mizu import app
 
 slots_bp = Blueprint('slots_bp', __name__)
@@ -27,6 +28,8 @@ def update_slot_status():
         return bad_headers_content_type()
 
     body = request.json
+
+    logger.debug('Handling slot update')
 
     unprovided = []
     if 'machine' not in body:
@@ -83,6 +86,8 @@ def update_slot_status():
             body['machine'],
             body['slot'],
         ))
+
+    logger.debug('Slot update details validated')
 
     slot = db.session.query(Slot).filter(Slot.number == body['slot'], Slot.machine == machine.id).\
             update(updates, synchronize_session=False)

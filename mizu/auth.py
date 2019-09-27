@@ -3,6 +3,7 @@ from flask import request, jsonify
 
 import requests
 
+from mizu import logger
 
 def check_token(admin_only=False, return_user_obj=False):
 
@@ -10,6 +11,7 @@ def check_token(admin_only=False, return_user_obj=False):
         @wraps(func)
         def wrapped_function(*args, **kwargs):
 
+            logger.debug('Begin handling request for {}'.format(request.host))
             unauthorized = {
                 "error": "Could not authenticate user",
                 "errorCode": 401
@@ -20,6 +22,7 @@ def check_token(admin_only=False, return_user_obj=False):
             }
             token = request.headers.get('Authorization', None)
             if token is None:
+                logger.debug('User unauthorized with no Bearer token')
                 return jsonify(unauthorized), 401
 
             headers = {
@@ -33,6 +36,7 @@ def check_token(admin_only=False, return_user_obj=False):
             try:
                 verify_response.raise_for_status()
             except requests.exceptions.HTTPError:
+                logger.debug('Unable to verify Bearer token against provider')
                 return jsonify(unauthorized), 401
             
             verify_body = verify_response.json()
@@ -45,6 +49,7 @@ def check_token(admin_only=False, return_user_obj=False):
                 if not 'drink' in verify_body['groups']:
                     return jsonify(permissions), 401
 
+            logger.debug('Successfully authenticated user {}'.format(verify_body['preferred_username']))
             if return_user_obj:
                 return func(*args, user=verify_body, **kwargs)
 
