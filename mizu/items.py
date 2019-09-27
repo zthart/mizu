@@ -16,6 +16,7 @@ from mizu.models import Item
 from sqlalchemy import orm
 
 from mizu import db
+from mizu import logger
 from mizu.data_adapters import SqlAlchemyAdapter
 from mizu.data_adapters import MockAdapter
 
@@ -61,6 +62,8 @@ def manage_items(adapter):
             return bad_headers_content_type()
         body = request.json
 
+        logger.debug('Handling item creation')
+
         # Keep a list of unprovided params, makes our response nice and clear
         unprovided = []
         if 'name' not in body:
@@ -78,6 +81,8 @@ def manage_items(adapter):
         except ValueError:
             return bad_params('You cannot create a worthless item')
 
+        logger.debug('Item details validated')
+
         name = body['name']
 
         new_item = adapter.create_item(name, price)
@@ -93,6 +98,8 @@ def manage_items(adapter):
 
         body = request.json
 
+        logger.debug('Handling item deletion')
+
         if 'id' not in body:
             return bad_params('An Item ID must be provided for deletion')
 
@@ -107,6 +114,8 @@ def manage_items(adapter):
             return bad_params('Item ID value provided was invalid, ensure that the ID being provided is attached to an '
                               'item that is present in the system.')
 
+        logger.debug('Item details validated')
+
         adapter.delete_item(item['id'])
 
         success = {
@@ -120,6 +129,8 @@ def manage_items(adapter):
         body = request.json
         price = None
         name = None
+
+        logger.debug('Handling item update')
 
         if 'id' not in body:
             return bad_params('An Item ID must be provided to update')
@@ -140,6 +151,8 @@ def manage_items(adapter):
             if name == '':
                 return bad_params('An item cannot have an empty name')
 
+        logger.debug('New item details validated')
+
         try:
             item_id = int(body['id'])
             if item_id < 0:
@@ -156,6 +169,8 @@ def manage_items(adapter):
         except ValueError:
             return bad_params('Item ID value provided was invalid, ensure that the ID being provided is attached to an '
                               'item that is present in the system.')
+
+        logger.debug('Existing item validated for update')
 
         item = adapter.get_item(item_id)
 

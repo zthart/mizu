@@ -20,6 +20,7 @@ from mizu.errors import bad_params, bad_headers_content_type
 from mizu.data_adapters import get_adapter
 
 from mizu import app
+from mizu import logger
 
 import requests
 
@@ -35,6 +36,7 @@ def current_drinks(adapter):
     # assemble an array of (id, name) tuples
     if machine_name is None:
         machines = adapter.get_machines()
+        logger.debug('Fetching contents for machines {}'.format(', '.join([m['name'] for m in machines])))
     else:
         # We're given a machine name
         machine = adapter.get_machine(machine_name)
@@ -42,6 +44,7 @@ def current_drinks(adapter):
         if machine is None:
             return bad_params('The provided machine name \'{}\' is not a valid machine'.format(machine_name))
 
+        logger.debug('Fetching contents for machine {}'.format(machine_name))
         machines = []
         machines.append(machine)
 
@@ -50,6 +53,7 @@ def current_drinks(adapter):
     } 
 
     for machine in machines:
+        logger.debug('Querying machine details for {}'.format(machine['name']))
         machine_slots = adapter.get_slots_in_machine(machine['name'])
         
         is_online = True
@@ -57,8 +61,17 @@ def current_drinks(adapter):
         try:
             slot_status = _get_machine_status(machine['name'])
         except requests.exceptions.ConnectionError:
+            # We couldn't connect to the machine
+            logger.debug('Machine {} is unreachable, reporting as offline'.format(machine['name']))
             slot_status = [{'empty': True} for n in range(len(machine_slots))]
             is_online = False  # seems a useful feature
+        except requests.exceptions.Timeout:
+            # We hit a timeout waiting for the machine to respond
+            logger.debug('Machine {} was reachable, but did not respond within a reasonable amount of time'.format(
+                machine['name']
+            ))
+            slot_status = [{'empty': True} for n in range(len(machine_slots))]
+            is_online = False 
         
         machine_contents = {
             'id': machine['id'], 
@@ -82,6 +95,7 @@ def current_drinks(adapter):
 
             })
         response['machines'].append(machine_contents)
+        logger.debug('Fetched all available details for {}'.format(machine['name']))
 
     response['message'] = 'Successfully retrieved machine contents for {}'.format(
         ', '.join([machine['name'] for machine in machines])
@@ -96,6 +110,8 @@ def current_drinks(adapter):
 def drop_drink(adapter, user = None):
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
+
+    logger.debug('Handing request to drop drink')
 
     bal_before = _get_credits(user['preferred_username'])
 
@@ -123,6 +139,8 @@ def drop_drink(adapter, user = None):
             body['slot']
         ))
 
+    logger.debug('Drop request is valid')
+
     slot_status = _get_machine_status(body['machine'])
     if slot_status[body['slot']-1]['empty']:  # slots are 1 indexed
         return jsonify({
@@ -139,6 +157,8 @@ def drop_drink(adapter, user = None):
         }
         return jsonify(response), 402
 
+    logger.debug('User has sufficient balance')
+
     machine_hostname = '{}.csh.rit.edu'.format(machine.name)
     request_endpoint = 'https://{}/drop'.format(machine_hostname)
     
@@ -153,10 +173,15 @@ def drop_drink(adapter, user = None):
 
     # Do the thing
     try:
-        response = requests.post(request_endpoint, json=body, headers=headers)
+        response = requests.post(request_endpoint, json=body, headers=headers, timeout=5)
     except requests.exceptions.ConnectionError:
         return jsonify({
             "error": "Could not contact drink machine for drop!",
+            "errorCode": 500
+        }), 500
+    except requests.exceptions.Timeout:
+        return jsonify({
+            "error": "Connection to the drink machine timed out!",
             "errorCode": 500
         }), 500
 
@@ -168,8 +193,10 @@ def drop_drink(adapter, user = None):
                         "errorCode": response.status_code}),\
                        response.status_code
 
+    logger.debug('Dropped drink - adjusting user credits')
     new_balance = bal_before - item.price
     _manage_credits(user['preferred_username'], new_balance, adapter)
+    logger.debug('Credits for {} updated'.format(user['preferred_username']))
 
     return jsonify({"message": "Drop successful!", "drinkBalance": new_balance}), response.status_code
 
@@ -186,6 +213,8 @@ def _get_machine_status(machine_name):
 
         Raises:
             requests.exceptions.HTTPError: in the event the machine responds with a non-2XX
+            requests.exceptions.Timeout: if the machine does not respond with any bytes within 5 seconds
+            requests.exceptions.ConnectionError: if the machine is not online
     """
 
     headers = {
@@ -194,11 +223,12 @@ def _get_machine_status(machine_name):
     }
 
     endpoint = 'https://{}.csh.rit.edu/health'.format(machine_name)
-
-    health_status = requests.get(endpoint, headers=headers)
+    health_status = requests.get(endpoint, headers=headers, timeout=5)
     health_status.raise_for_status()
 
     health_results = health_status.json()
+
+    logger.debug('Reached machine {} succesfully'.format(machine_name))
 
     slots = []
 

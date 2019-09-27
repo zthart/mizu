@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import logging
 
 from flask import Flask
 from flask import jsonify
@@ -13,6 +15,9 @@ from csh_ldap import CSHLDAP
 
 from mizu import config
 
+logger = logging.getLogger(__name__)
+
+
 app = Flask(__name__)
 app.config.update({
     'SQLALCHEMY_TRACK_MODIFICATIONS': False
@@ -23,6 +28,18 @@ if os.path.exists(os.path.join(os.getcwd(), 'config.py')):
     app.config.from_pyfile(os.path.join(os.getcwd(), 'config.py'))
 
 app.secret_key = app.config['SECRET_KEY']
+
+if app.config['DEBUG']:
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+else:
+    logger.setLevel(logging.INFO)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
