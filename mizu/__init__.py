@@ -7,6 +7,7 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 from flask import session
+from flask import redirect
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -74,7 +75,7 @@ app.register_blueprint(slots_bp)
 
 @app.route('/')
 def hello_world():
-    return 'hello world'
+    return redirect('https://webdrink.csh.rit.edu', 302)
 
 @app.errorhandler(404)
 def handle_404(e):
