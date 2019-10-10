@@ -57,26 +57,41 @@ def list_users(adapter):
 @check_token()
 def get_credits(adapter):
     uid = request.args.get('uid', None)
-    if uid is None:
-        return bad_params('Please provide a valid CSH uid as a URI parameter.')
+    ibutton = request.args.get('ibutton', None)
+    if uid is None and ibutton is None:
+        return bad_params('Please provide a valid CSH uid or ibutton value as a URI parameter.')
 
+    if uid:
+        try:
+            if adapter == MockAdapter:
+                user_ret = adapter.get_user(uid)
+            else:
+                user = _ldap.get_member(uid, uid=True)
+                
+                user_ret = {
+                    'uid': user.uid,
+                    'cn': user.cn,
+                    'drinkBalance': user.drinkBalance
+                }
+                message = 'Retrieved user with uid \'{}\''.format(uid)
+        except KeyError:
+            return bad_params('The requested uid \'{}\' does not belong to any user.'.format(uid))
+        
+    elif ibutton:
+        try:
+            user = _ldap.get_member_ibutton(ibutton)
 
-    try:
-        if adapter == MockAdapter:
-            user_ret = adapter.get_user(uid)
-        else:
-            user = _ldap.get_member(uid, uid=True)
-            
             user_ret = {
                 'uid': user.uid,
                 'cn': user.cn,
                 'drinkBalance': user.drinkBalance
             }
-    except KeyError:
-        return bad_params('The requested uid \'{}\' does not belong to any user.'.format(uid))
+            message = 'Retrieved user with iButton \'{}\''.format(ibutton)
+        except KeyError:
+            return bad_params('The provided iButton value does not belong to any user.')
 
     success = {
-        'message': 'Retrieved user with uid \'{}\''.format(uid),
+        'message': message,
         'user': user_ret
     }
     return jsonify(success), 200
