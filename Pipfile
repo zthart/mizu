@@ -12,7 +12,8 @@ csh-ldap = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 requests = "*"
-psycopg2 = "*"
+psycopg2 = {version="*", sys_platform="== 'linux'"}
+psycopg2-binary = {version="*", sys_platform="== 'darwin'"}
 gunicorn = "*"
 
 [requires]

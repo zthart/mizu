@@ -51,6 +51,23 @@ $ pipenv install --dev --skip-lock
 ```
 
 ### Non-python dependencies
+
+#### Note on macOS
+
+The current Pipfile will, rather than build the `psycopg2` requirement, install the pre-built `psycopg2-binary` as
+recommended by the project maintainers. The notes below may no longer be correct, and installing dependencies with the
+above `pipenv` command is the recommended approach.
+
+#### Note on macOS Catalina
+
+We've noticed problems with Catalina (what else is new) where the `python_version = "3.7"` line in the Pipfile will 
+select a `python3.7` binary in `/usr/bin/` rather than the recommended `brew install`'d version. To remedy this, on the 
+first install of the project (when a virtualenv is first created by pipenv), open the `Pipenv` file and **remove** the 
+`python_version` line. After a succesful install, replace the line, and verify that subsequent `pipenv install ...` 
+commands behave as expected
+
+---
+
 You will need to be on a machine that has the development headers for ldap (maybe also sasl), libpq/postgres, and ssl -
 if you are on MacOS, you may need to export the following environment variables to get the installation to work
 
