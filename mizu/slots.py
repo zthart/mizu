@@ -17,13 +17,18 @@ from mizu.auth import check_token
 from mizu.errors import bad_params, bad_headers_content_type
 
 from mizu import logger
-from mizu import app
+
 
 slots_bp = Blueprint('slots_bp', __name__)
 
 @slots_bp.route('/slots', methods=['PUT'])
 @check_token(admin_only=True)
-def update_slot_status():
+def update_slot_status(): # pylint: disable=too-many-return-statements
+    """ Update the status of a slot, including contained item and enabled/disabled status
+
+    TODO: implement storage backend abstractions
+    TODO: Could abstract out all of the parameter validation to helper functions to resolve linter complaints
+    """
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
 
@@ -63,7 +68,7 @@ def update_slot_status():
 
         updates['item'] = item_id
 
-        item = db.session.query(Item).filter(Item.id == item_id).first()
+        item = db.session.query(Item).filter(Item.id == item_id).first() # pylint: disable=no-member
 
         if item is None:
             return bad_params('No item with ID {} is present in the system'.format(item_id))
@@ -76,11 +81,13 @@ def update_slot_status():
     except ValueError:
         return bad_params('The slot number must be a positive integer')
 
+    # pylint: disable=no-member
     machine = db.session.query(Machine).filter(Machine.name == body['machine']).first()
     if machine is None:
         return bad_params('The machine \'{}\' is not a valid machine'.format(body['machine']))
 
     slot = db.session.query(Slot).filter(Slot.number == slot_num, Slot.machine == machine.id).first()
+
     if slot is None:
         return bad_params('The machine \'{}\' does not have a slot number {}'.format(
             body['machine'],
@@ -98,6 +105,7 @@ def update_slot_status():
     db.session.commit()
 
     slot = db.session.query(Slot).filter(Slot.number == slot_num, Slot.machine == machine.id).first()
+    # pylint: enable=no-member
 
     success = {
         'message': 'Successfully updated slot {} in {}'.format(slot.number, body['machine']),
@@ -110,5 +118,3 @@ def update_slot_status():
     }
 
     return jsonify(success), 200
-
-

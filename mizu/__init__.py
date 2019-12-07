@@ -1,3 +1,17 @@
+"""
+::::    ::::  ::::::::::: ::::::::: :::    :::
++:+:+: :+:+:+     :+:          :+:  :+:    :+:
++:+ +:+:+ +:+     +:+         +:+   +:+    +:+
++#+  +:+  +#+     +#+        +#+    +#+    +:+
++#+       +#+     +#+       +#+     +#+    +#+
+#+#       #+#     #+#      #+#      #+#    #+#
+###       ### ########### #########  ########
+
+
+RESTful API and server for CSH's Drink project
+
+Licensed under the GPLv3, read ../LICENSE for more details
+"""
 import os
 import sys
 import json
@@ -33,7 +47,7 @@ app.secret_key = app.config['SECRET_KEY']
 if app.config['DEBUG']:
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
-    
+
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
@@ -50,6 +64,7 @@ if os.path.exists(os.path.join(os.getcwd(), 'mock.json')):
     with open('mock.json', 'r') as f:
         mock_db = json.load(f)
 
+# pylint: disable=wrong-import-position
 from mizu.models import Machine
 from mizu.models import Item
 from mizu.models import Slot
@@ -75,10 +90,12 @@ app.register_blueprint(slots_bp)
 
 @app.route('/')
 def hello_world():
+    """ Redirect to the webclient - nothing to see here """
     return redirect('https://webdrink.csh.rit.edu', 302)
 
 @app.errorhandler(404)
 def handle_404(e):
+    """ 404 -- definitely nothing to see here """
     error = {
         "message": "What you're looking for does not exist, like a drink admin when drink is empty",
         "error": str(e),
@@ -89,6 +106,7 @@ def handle_404(e):
 
 @app.errorhandler(500)
 def handle_500(e):
+    """ uh oh,,,, stinky,,, """
     error = {
         "message": "The drink server encountered an error, it was more than likely your fault",
         "error": str(e),
@@ -99,8 +117,8 @@ def handle_500(e):
 
 @app.after_request
 def allow_cors(response):
+    """ Enable CORS """
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE'
     return response
-

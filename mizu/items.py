@@ -9,16 +9,7 @@ CRUD for Items
 
 from flask import Blueprint, jsonify, request
 
-from mizu.models import Machine
-from mizu.models import Slot
-from mizu.models import Item
-
-from sqlalchemy import orm
-
-from mizu import db
 from mizu import logger
-from mizu.data_adapters import SqlAlchemyAdapter
-from mizu.data_adapters import MockAdapter
 
 from mizu.auth import check_token
 from mizu.data_adapters import get_adapter
@@ -54,9 +45,12 @@ def get_items(adapter):
 @items_bp.route('/items', methods=['POST', 'PUT', 'DELETE'])
 @get_adapter
 @check_token(admin_only=True)
-def manage_items(adapter):
-    """ Route for retrieving, creating, and deleting items."""
-    if request.method == 'POST':
+def manage_items(adapter): # pylint: disable=too-many-return-statements,inconsistent-return-statements
+    """ Route for retrieving, creating, and deleting items.
+
+    TODO: Debatably should be split up, should be a simple first issue
+    """
+    if request.method == 'POST': # pylint: disable=no-else-return
         # Check headers
         if request.headers.get('Content-Type') != 'application/json':
             return bad_headers_content_type()
@@ -77,7 +71,7 @@ def manage_items(adapter):
         try:
             price = int(body['price'])
             if price < 0:
-                raise ValueError();
+                raise ValueError()
         except ValueError:
             return bad_params('You cannot create a worthless item')
 
@@ -88,13 +82,15 @@ def manage_items(adapter):
         new_item = adapter.create_item(name, price)
 
         success = {
-            'message': 'Item \'{}\' added succesfully at a price of {} credits'.format(new_item['name'], new_item['price'])
+            'message': 'Item \'{}\' added succesfully at a price of {} credits'.format(
+                new_item['name'],
+                new_item['price'])
         }
 
         return jsonify(success), 201
     elif request.method == 'DELETE':
         if request.headers.get('Content-Type') != 'application/json':
-            return bad_headers_content_type();
+            return bad_headers_content_type()
 
         body = request.json
 
@@ -181,4 +177,3 @@ def manage_items(adapter):
             'item': item
         }
         return jsonify(success), 200
-

@@ -7,12 +7,7 @@ Routes for retrieving information on the contents of the machines, and dropping 
 """
 
 from flask import Blueprint, jsonify, request
-
-from mizu import db
-
-from mizu.models import Machine
-from mizu.models import Item
-from mizu.models import Slot
+import requests
 
 from mizu.users import _manage_credits, _get_credits
 from mizu.auth import check_token
@@ -22,7 +17,6 @@ from mizu.data_adapters import get_adapter
 from mizu import app
 from mizu import logger
 
-import requests
 
 drinks_bp = Blueprint('drinks_bp', __name__)
 
@@ -30,13 +24,14 @@ drinks_bp = Blueprint('drinks_bp', __name__)
 @get_adapter
 @check_token()
 def current_drinks(adapter):
+    """ Retrieve stock from one or more machines, identified by name """
     # optional request paremeter, the name of the machine to get stock information
     machine_name = request.args.get('machine', None)
 
     # assemble an array of (id, name) tuples
     if machine_name is None:
         machines = adapter.get_machines()
-        logger.debug('Fetching contents for machines {}'.format(', '.join([m['name'] for m in machines])))
+        logger.debug('Fetching contents for machines %s ', ', '.join([m['name'] for m in machines]))
     else:
         # We're given a machine name
         machine = adapter.get_machine(machine_name)
@@ -44,38 +39,38 @@ def current_drinks(adapter):
         if machine is None:
             return bad_params('The provided machine name \'{}\' is not a valid machine'.format(machine_name))
 
-        logger.debug('Fetching contents for machine {}'.format(machine_name))
+        logger.debug('Fetching contents for machine %s', machine_name)
         machines = []
         machines.append(machine)
 
     response = {
         "machines": []
-    } 
+    }
 
     for machine in machines:
-        logger.debug('Querying machine details for {}'.format(machine['name']))
+        logger.debug('Querying machine details for %s', machine['name'])
         machine_slots = adapter.get_slots_in_machine(machine['name'])
-        
+
         is_online = True
-        
+
         try:
             slot_status = _get_machine_status(machine['name'])
         except requests.exceptions.ConnectionError:
             # We couldn't connect to the machine
-            logger.debug('Machine {} is unreachable, reporting as offline'.format(machine['name']))
+            logger.debug('Machine {%s is unreachable, reporting as offline', machine['name'])
             slot_status = [{'empty': True} for n in range(len(machine_slots))]
             is_online = False  # seems a useful feature
         except requests.exceptions.Timeout:
             # We hit a timeout waiting for the machine to respond
-            logger.debug('Machine {} was reachable, but did not respond within a reasonable amount of time'.format(
-                machine['name']
-            ))
+            logger.debug(
+                'Machine %s was reachable, but did not respond within a reasonable amount of time',
+                machine['name'])
             slot_status = [{'empty': True} for n in range(len(machine_slots))]
-            is_online = False 
-        
+            is_online = False
+
         machine_contents = {
-            'id': machine['id'], 
-            'name': machine['name'], 
+            'id': machine['id'],
+            'name': machine['name'],
             'display_name': machine['display_name'],
             'is_online': is_online,
             'slots': []
@@ -95,7 +90,7 @@ def current_drinks(adapter):
 
             })
         response['machines'].append(machine_contents)
-        logger.debug('Fetched all available details for {}'.format(machine['name']))
+        logger.debug('Fetched all available details for %s', machine['name'])
 
     response['message'] = 'Successfully retrieved machine contents for {}'.format(
         ', '.join([machine['name'] for machine in machines])
@@ -107,7 +102,12 @@ def current_drinks(adapter):
 @drinks_bp.route('/drinks/drop', methods=['POST'])
 @get_adapter
 @check_token(return_user_obj=True)
-def drop_drink(adapter, user = None):
+def drop_drink(adapter, user=None):
+    """ Drop a drink for a provided (authenticated) user
+
+    Currently, this will not drop a drink on behalf of a user, the user used will be the authenticated user. This could
+    change in the future if something comes up that warrants it (ibutton-based clients, hint hint hint)
+    """
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
 
@@ -128,11 +128,11 @@ def drop_drink(adapter, user = None):
             ', '.join(unprovided)
         ))
 
-    machine = db.session.query(Machine).filter(Machine.name == body['machine']).first()
+    machine = adapter.get_machine(body['machine'])
     if machine is None:
         return bad_params('The machine name \'{}\' is not a valid machine'.format(body['machine']))
 
-    slot = db.session.query(Slot).filter(Slot.number == body['slot'], Slot.machine == machine.id).first()
+    slot = adapter.get_slot_in_machine(machine['name'], body['slot'])
     if slot is None:
         return bad_params('The machine \'{}\' does not have a slot with id \'{}\''.format(
             body['machine'],
@@ -148,7 +148,7 @@ def drop_drink(adapter, user = None):
             "errorCode": 400
         }), 400
 
-    item = db.session.query(Item).filter(Item.id == slot.item).first()
+    item = adapter.get_item(slot['item'])
 
     if bal_before < item.price:
         response = {
@@ -161,7 +161,7 @@ def drop_drink(adapter, user = None):
 
     machine_hostname = '{}.csh.rit.edu'.format(machine.name)
     request_endpoint = 'https://{}/drop'.format(machine_hostname)
-    
+
     body = {
         "slot": slot.number
     }
@@ -196,7 +196,7 @@ def drop_drink(adapter, user = None):
     logger.debug('Dropped drink - adjusting user credits')
     new_balance = bal_before - item.price
     _manage_credits(user['preferred_username'], new_balance, adapter)
-    logger.debug('Credits for {} updated'.format(user['preferred_username']))
+    logger.debug('Credits for %s updated', user['preferred_username'])
 
     return jsonify({"message": "Drop successful!", "drinkBalance": new_balance}), response.status_code
 
@@ -204,12 +204,13 @@ def _get_machine_status(machine_name):
     """ helper function to query a machine given it's name (should be the actual hostname, will be dropped into a
         {}.csh.rit.edu template), and return slot status information in a more programmatically useful way.
 
-        Realistically, the data should look like this coming back from the mahcine -- this is low hanging fruit for someone
-        to fix.
+        Realistically, the data should look like this coming back from the mahcine -- this is low hanging fruit for
+        someone to fix.
 
         Warning::
 
-            This doesn't actually validate the machine name. That should be done in what ever route needs to call this function.
+            This doesn't actually validate the machine name. That should be done in whatever route needs to call this
+            function.
 
         Raises:
             requests.exceptions.HTTPError: in the event the machine responds with a non-2XX
@@ -228,7 +229,7 @@ def _get_machine_status(machine_name):
 
     health_results = health_status.json()
 
-    logger.debug('Reached machine {} succesfully'.format(machine_name))
+    logger.debug('Reached machine %s succesfully', machine_name)
 
     slots = []
 
@@ -240,4 +241,3 @@ def _get_machine_status(machine_name):
         })
 
     return slots
-

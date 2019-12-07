@@ -11,8 +11,6 @@ from flask import Blueprint, jsonify, request
 import ldap
 import ldap.modlist
 
-from mizu import db
-from mizu.data_adapters import SqlAlchemyAdapter
 from mizu.data_adapters import MockAdapter
 from mizu.data_adapters import get_adapter
 
@@ -27,21 +25,21 @@ users_bp = Blueprint('users_bp', __name__)
 @get_adapter
 @check_token()
 def list_users(adapter):
-
+    """ Return a list of all users """
     if adapter == MockAdapter:
         users = adapter.get_user()
     else:
         # Turns out creating objects for each of our 1200+ users is very slow. Querying LDAP directly is much faster
         ldap_conn = _ldap.get_con()
         users = ldap_conn.search_s("cn=users,cn=accounts,dc=csh,dc=rit,dc=edu",
-                                   ldap.SCOPE_SUBTREE,
+                                   ldap.SCOPE_SUBTREE, # pylint: disable=no-member
                                    "(objectClass=cshMember)",
                                    ["uid", "cn", "drinkBalance"])
 
         users = [{
             'cn': user[1]['cn'][0].decode('utf-8'),
             'uid': user[1]['uid'][0].decode('utf-8'),
-            'drinkBalance': int(user[1].get('drinkBalance',[b'0'])[0].decode('utf-8'))
+            'drinkBalance': int(user[1].get('drinkBalance', [b'0'])[0].decode('utf-8'))
         } for user in users]
 
     success = {
@@ -56,6 +54,7 @@ def list_users(adapter):
 @get_adapter
 @check_token()
 def get_credits(adapter):
+    """ Get the credits for a user given their UID """
     uid = request.args.get('uid', None)
     ibutton = request.args.get('ibutton', None)
     if uid is None and ibutton is None:
@@ -67,7 +66,7 @@ def get_credits(adapter):
                 user_ret = adapter.get_user(uid)
             else:
                 user = _ldap.get_member(uid, uid=True)
-                
+
                 user_ret = {
                     'uid': user.uid,
                     'cn': user.cn,
@@ -76,7 +75,7 @@ def get_credits(adapter):
                 message = 'Retrieved user with uid \'{}\''.format(uid)
         except KeyError:
             return bad_params('The requested uid \'{}\' does not belong to any user.'.format(uid))
-        
+
     elif ibutton:
         try:
             user = _ldap.get_member_ibutton(ibutton)
@@ -101,6 +100,12 @@ def get_credits(adapter):
 @get_adapter
 @check_token(admin_only=True)
 def manage_credits(adapter):
+    """ Manage a users credit balance
+
+    Note::
+        We use a PUT method here, since this is a wholesale update to a user's balance, not an increment/decrement.
+        If a client were to send multiple requests, there should be no side effects.
+    """
     if request.headers.get('Content-Type') != 'application/json':
         return bad_headers_content_type()
 
@@ -112,7 +117,7 @@ def manage_credits(adapter):
     if 'uid' not in body:
         unprovided.append('uid')
 
-    if len(unprovided) > 0 :
+    if len(unprovided) > 0:
         return bad_params('The following required parameters were not provided: {}'.format(', '.join(unprovided)))
 
     try:
@@ -126,8 +131,7 @@ def manage_credits(adapter):
         'message': 'Drink balance updated from {} credits to {} credits for user \'{}\''.format(
                         old_balance,
                         new_balance,
-                        body['uid']
-                    ),
+                        body['uid']),
     }
 
     return jsonify(success), 200
@@ -138,11 +142,12 @@ def _get_credits(uid):
 
 def _manage_credits(uid, drinkBalance, adapter):
     """ Set the drinkBalance of the user corresponding to the provided uid """
-    i_balance = int(drinkBalance)
-    
+    # Cast the balance to an integer to force a ValueError on non-int values
+    i_balance = int(drinkBalance) # pylint: disable=unused-variable
+
     if adapter == MockAdapter:
         return adapter.update_user_balance(uid, drinkBalance)
-    
+
     user = _ldap.get_member(uid, uid=True)
 
     old_drinkBalance = user.drinkBalance
@@ -157,4 +162,3 @@ def _manage_credits(uid, drinkBalance, adapter):
 
     user = _ldap.get_member(uid, uid=True)
     return int(old_drinkBalance), int(user.drinkBalance)
-
