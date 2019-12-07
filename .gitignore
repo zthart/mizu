@@ -115,7 +115,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-.env
+
+# Project specific ignores
 data.db
 *.swp
 .idea/
+.vscode/
+*.code-workspace
