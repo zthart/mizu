@@ -1,6 +1,9 @@
+""" Models for Mizu
+
+Simple representations for our db models
+"""
 from sqlalchemy import Column
 from sqlalchemy import Integer
-from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy import Float
@@ -11,6 +14,7 @@ from mizu import db
 
 
 class Machine(db.Model):
+    """ Models for Machines with an internal name and display-appropriate name"""
     __tablename__ = 'machines'
 
     id = Column(Integer, primary_key=True)
@@ -23,6 +27,7 @@ class Machine(db.Model):
 
 
 class Item(db.Model):
+    """ An Item with a name and price"""
     __tablename__ = 'items'
 
     id = Column(Integer, primary_key=True)
@@ -35,6 +40,7 @@ class Item(db.Model):
 
 
 class Slot(db.Model):
+    """ A slot, contained within a machine, containing an item """
     __tablename__ = 'slots'
 
     machine = Column(ForeignKey('machines.id'), primary_key=True)
@@ -46,7 +52,9 @@ class Slot(db.Model):
         self.machine = machine
         self.number = number
 
+
 class Log(db.Model):
+    """ A simple drop log, currently unused """
     __tablename__ = 'logs'
 
     id = Column(Integer, primary_key=True)
@@ -61,7 +69,9 @@ class Log(db.Model):
         self.user = user
         self.time = time
 
+
 class Temp(db.Model):
+    """ A simple temperature log, currently unused """
     __tablename__ = 'temps'
 
     machine = Column(ForeignKey('machines.id'), primary_key=True)
@@ -72,4 +82,3 @@ class Temp(db.Model):
         self.machine = machine
         self.time = time
         self.temp = temp
-

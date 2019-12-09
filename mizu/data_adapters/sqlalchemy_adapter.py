@@ -1,28 +1,30 @@
-from . import DataAdapterABC
-
+""" Adapter for SQL-based storage backends supported by SQLAlchemy """
 from mizu import db
 
 from mizu.models import Item
 from mizu.models import Machine
 from mizu.models import Slot
 
-from sqlalchemy import orm
+from . import DataAdapterABC
+
 
 class SqlAlchemyAdapter(DataAdapterABC):
-
+    # pylint: disable=no-member,missing-function-docstring
+    """ Interface for operations on the underlying SQLAlchemy-registered db """
     @staticmethod
     def get_machine(machine_name):
         """ Query the SQL Alchemy connected DB for a machine with the provided name
 
         Returns:
-            dict: a ``mizu.models.Machine`` object serialized as a python dict/json, or ``None`` if no 
+            dict: a ``mizu.models.Machine`` object serialized as a python dict/json, or ``None`` if no
                 such machine can be found
         """
         machine = SqlAlchemyAdapter._get_machine(machine_name)
+
         if machine is None:
             return machine
-        else:
-            return SqlAlchemyAdapter._serialize_machine(machine)
+
+        return SqlAlchemyAdapter._serialize_machine(machine)
 
     @staticmethod
     def get_machines():
@@ -38,9 +40,9 @@ class SqlAlchemyAdapter(DataAdapterABC):
 
         return list_machines
 
-    @staticmethod 
+    @staticmethod
     def get_items():
-        """ Query the SQL Alchemy Connected DB for All Items. 
+        """ Query the SQL Alchemy Connected DB for All Items.
 
         Returns:
             list: a list of ``Item`` objects serialized as json
@@ -49,7 +51,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
         list_items = []
         for item in db_items:
             list_items.append(SqlAlchemyAdapter._serialize_item(item))
-        
+
         return list_items
 
     @staticmethod
@@ -67,7 +69,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
 
     @staticmethod
     def create_item(item_name, item_price):
-        """ Create an item via the ORM 
+        """ Create an item via the ORM
 
         Returns:
             dict: An ``Item`` object serialized as json
@@ -80,7 +82,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
 
     @staticmethod
     def delete_item(item_id):
-        """ Delete an item present in the system 
+        """ Delete an item present in the system
 
         Returns:
             bool: ``True`` if the deletion was sucessful, ``False`` otherwise
@@ -94,8 +96,8 @@ class SqlAlchemyAdapter(DataAdapterABC):
 
     @staticmethod
     def update_item(item_id, item_name=None, item_price=None):
-        """ Update the name and/or price of the item corresponding to the provided ID 
-        
+        """ Update the name and/or price of the item corresponding to the provided ID
+
         Returns:
             dict: An ``Item`` object serialized as json
 
@@ -103,7 +105,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
             ValueError: if the ID passed does not correspond to an itme in the system
         """
         item = SqlAlchemyAdapter._get_item(item_id)
-        
+
         if item is None:
             raise ValueError('The ID provided does not represent an item in the system')
 
@@ -144,12 +146,20 @@ class SqlAlchemyAdapter(DataAdapterABC):
     def update_slot_status(machine_id, slot_num):
         pass
 
+    @staticmethod
+    def get_user(uid=None):
+        pass
+
+    @staticmethod
+    def update_user_balance(uid, balance):
+        pass
+
     ###########################################################################
     # Private / Helper functions
 
     @staticmethod
     def _serialize_item(item):
-        """ Serialize a ``mizu.models.Item`` into a python dict / JSON """ 
+        """ Serialize a ``mizu.models.Item`` into a python dict / JSON """
         return {
             'id': item.id,
             'name': item.name,
@@ -174,7 +184,7 @@ class SqlAlchemyAdapter(DataAdapterABC):
             'item': slot.item,
             'active': slot.active
         }
-    
+
     @staticmethod
     def _get_item(item_id):
         """ Get a ``mizu.models.Item`` object by ID """
@@ -184,4 +194,3 @@ class SqlAlchemyAdapter(DataAdapterABC):
     def _get_machine(machine_name):
         """ Get a ``mizu.models.Machine`` object by name """
         return db.session.query(Machine).filter(Machine.name == machine_name).first()
-

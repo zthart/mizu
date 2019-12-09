@@ -1,12 +1,11 @@
-from . import DataAdapterABC
+""" Adapter for a in-memory dictionary based storage backend
+"""
 
 from functools import wraps
 
 from mizu import mock_db
 
-from mizu.models import Item
-from mizu.models import Machine
-from mizu.models import Slot
+from . import DataAdapterABC
 
 
 def check_dataset(func):
@@ -17,10 +16,11 @@ def check_dataset(func):
             raise ValueError('No mock dataset was found at app start, mocking is disabled')
 
         return func(*args, **kwargs)
-    return wrapped_function 
+    return wrapped_function
 
+# pylint: disable=missing-function-docstring
 class MockAdapter(DataAdapterABC):
-        
+    """ Adapter for an in-memory dataset filled with fake data, useful for mocking higher-privileged requests """
     @staticmethod
     @check_dataset
     def get_machine(machine_name):
@@ -52,7 +52,7 @@ class MockAdapter(DataAdapterABC):
                 break
 
         return r_item
-    
+
     @staticmethod
     @check_dataset
     def create_item(item_name, item_price):
@@ -63,7 +63,7 @@ class MockAdapter(DataAdapterABC):
         new_item = {'id': latest_id+1, 'name': item_name, 'price': item_price}
         mock_db['Items'].append(new_item)
         return new_item
-    
+
     @staticmethod
     @check_dataset
     def delete_item(item_id):
@@ -135,4 +135,3 @@ class MockAdapter(DataAdapterABC):
                 return int(old_balance), int(balance)
         # Using KeyError to maintain compat with CSH Ldap Lib
         raise KeyError('The request user does not exist')
-
