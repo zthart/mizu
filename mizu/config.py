@@ -1,10 +1,3 @@
-""" Base public configuration for mizu
-
-Note::
-    Non-drink admin members wanting to stand up an instance of the application for development should talk to a Drink
-    Admin about the variables that will need to be overridden in your environment, and the limited functionality that
-    you will face without admin secrets. Reach out in person, or in CSH slack for more information
-"""
 import secrets
 from os import environ as env
 import os
@@ -23,9 +16,9 @@ OIDC_CLIENT_ID = env.get('MIZU_OIDC_CLIENT_ID', 'drink')
 OIDC_CLIENT_SECRET = env.get('MIZU_OIDC_CLIENT_SECRET', '')
 
 LDAP_URL = env.get('MIZU_LDAP_URL', 'ldaps://ipa01-nrh.csh.rit.edu:636')
-LDAP_BIND_DN = env.get(
-    'MIZU_BIND_DN',
-    'krbprincipalname=drink/drink.csh.rit.edu@CSH.RIT.EDU,cn=services,cn=accounts,dc=csh,dc=rit,dc=edu')
+LDAP_BIND_DN = env.get('MIZU_BIND_DN',
+'krbprincipalname=drink/drink.csh.rit.edu@CSH.RIT.EDU,cn=services,cn=accounts,dc=csh,dc=rit,dc=edu')
 LDAP_BIND_PW = env.get('MIZU_BIND_PW', '')
 
 MACHINE_API_TOKEN = env.get('MIZU_MACHINE_API_TOKEN', '')
+

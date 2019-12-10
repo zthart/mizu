@@ -1,12 +1,7 @@
-"""ABC for Storage Interface
-
-Storage interfaces should implement the following functions to enable support across all endpoints
-"""
 from abc import ABC, abstractmethod
 
-# pylint: disable=unnecessary-pass
 class DataAdapterABC(ABC):
-    """ A Data Adapter Interface """
+
     @staticmethod
     @abstractmethod
     def get_machine(machine_name):
@@ -61,14 +56,3 @@ class DataAdapterABC(ABC):
         """ Update the status (enabled/disabled) of the numbered slot in the machine with the provided ID """
         pass
 
-    @staticmethod
-    @abstractmethod
-    def get_user(uid=None):
-        """ Return the user corresponding to the provided UID """
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def update_user_balance(uid, balance):
-        """ Update the balanace of the user with the provided UID """
-        pass
