@@ -86,6 +86,7 @@ def current_drinks(adapter):
             machine_contents['slots'].append({
                 "number": slot['number'],
                 "active": slot['active'],
+                "count": slot['count'],
                 "empty": slot_status[slot['number']-1]['empty'],
                 "item": {
                     "name": slot_item['name'],

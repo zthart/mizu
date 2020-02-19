@@ -172,9 +172,10 @@ class SqlAlchemyAdapter(DataAdapterABC):
             'machine': slot.machine,
             'number': slot.number,
             'item': slot.item,
-            'active': slot.active
+            'active': slot.active,
+            'count': slot.count
         }
-    
+
     @staticmethod
     def _get_item(item_id):
         """ Get a ``mizu.models.Item`` object by ID """
