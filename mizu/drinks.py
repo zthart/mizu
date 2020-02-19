@@ -142,7 +142,7 @@ def drop_drink(adapter, user = None):
     logger.debug('Drop request is valid')
 
     slot_status = _get_machine_status(body['machine'])
-    if slot_status[body['slot']-1]['empty']:  # slots are 1 indexed
+    if body['machine'] == 'snack' and slot.count < 1 or slot_status[body['slot']-1]['empty']:  # slots are 1 indexed
         return jsonify({
             "error": "The requested slot is empty!",
             "errorCode": 400
@@ -198,6 +198,12 @@ def drop_drink(adapter, user = None):
     _manage_credits(user['preferred_username'], new_balance, adapter)
     logger.debug('Credits for {} updated'.format(user['preferred_username']))
 
+    if body['machine'] == 'snack':
+        slot.count = Slot.count - 1 # Decrement stock count, set inactive if empty
+        if slot.count == 0:
+            slot.active = False
+        db.session.commit()
+
     return jsonify({"message": "Drop successful!", "drinkBalance": new_balance}), response.status_code
 
 def _get_machine_status(machine_name):
@@ -240,4 +246,3 @@ def _get_machine_status(machine_name):
         })
 
     return slots
-
