@@ -143,7 +143,7 @@ def drop_drink(adapter, user = None):
     logger.debug('Drop request is valid')
 
     slot_status = _get_machine_status(body['machine'])
-    if body['machine'] == 'snack' and slot.count < 1 or slot_status[body['slot']-1]['empty']:  # slots are 1 indexed
+    if (body['machine'] == 'snack' and slot.count < 1) or slot_status[body['slot']-1]['empty']:  # slots are 1 indexed
         return jsonify({
             "error": "The requested slot is empty!",
             "errorCode": 400
