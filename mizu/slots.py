@@ -68,6 +68,16 @@ def update_slot_status():
         if item is None:
             return bad_params('No item with ID {} is present in the system'.format(item_id))
 
+    if 'count' in body:
+        try:
+            count = int(body['count'])
+            if count < 0:
+                raise ValueError()
+        except ValueError:
+            return bad_params('The count value must be a positive integer')
+
+        updates['count'] = count
+
     try:
         slot_num = int(body['slot'])
 
@@ -106,9 +116,8 @@ def update_slot_status():
             'number': slot.number,
             'active': slot.active,
             'item_id': slot.item,
+            'count': slot.count
         },
     }
 
     return jsonify(success), 200
-
-

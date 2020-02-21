@@ -41,6 +41,7 @@ class Slot(db.Model):
     number = Column(Integer, primary_key = True)
     item = Column(ForeignKey('items.id'), nullable=True)
     active = Column(Boolean, default=False, server_default="false", nullable=False)
+    count = Column(Integer, nullable=True)
 
     def __init__(self, machine, number):
         self.machine = machine
