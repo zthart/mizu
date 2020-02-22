@@ -199,7 +199,7 @@ def drop_drink(adapter, user = None):
     _manage_credits(user['preferred_username'], new_balance, adapter)
     logger.debug('Credits for {} updated'.format(user['preferred_username']))
 
-    if body['machine'] == 'snack':
+    if machine.name == 'snack':
         slot.count = Slot.count - 1 # Decrement stock count, set inactive if empty
         if slot.count == 0:
             slot.active = False
