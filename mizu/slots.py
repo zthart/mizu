@@ -69,12 +69,14 @@ def update_slot_status():
             return bad_params('No item with ID {} is present in the system'.format(item_id))
 
     if 'count' in body:
-        try:
-            count = int(body['count'])
-            if count < 0:
-                raise ValueError()
-        except ValueError:
-            return bad_params('The count value must be a positive integer')
+        count = None
+        if body['count'] is not None:
+            try:
+                count = int(body['count'])
+                if count < 0:
+                    raise ValueError()
+            except ValueError:
+                return bad_params('The count value must be a positive integer')
 
         updates['count'] = count
 
