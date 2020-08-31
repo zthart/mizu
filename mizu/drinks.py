@@ -42,7 +42,9 @@ def current_drinks(adapter):
         machine = adapter.get_machine(machine_name)
 
         if machine is None:
-            return bad_params('The provided machine name \'{}\' is not a valid machine'.format(machine_name))
+            err = f'The provided machine name \'{machine_name}\' is not a valid machine'
+            logger.error(err)
+            return bad_params(err)
 
         logger.debug('Fetching contents for machine {}'.format(machine_name))
         machines = []
@@ -50,14 +52,14 @@ def current_drinks(adapter):
 
     response = {
         "machines": []
-    } 
+    }
 
     for machine in machines:
         logger.debug('Querying machine details for {}'.format(machine['name']))
         machine_slots = adapter.get_slots_in_machine(machine['name'])
-        
+
         is_online = True
-        
+
         try:
             slot_status = _get_machine_status(machine['name'])
         except requests.exceptions.ConnectionError:
@@ -71,30 +73,20 @@ def current_drinks(adapter):
                 machine['name']
             ))
             slot_status = [{'empty': True} for n in range(len(machine_slots))]
-            is_online = False 
-        
+            is_online = False
+
         machine_contents = {
-            'id': machine['id'], 
-            'name': machine['name'], 
+            'id': machine['id'],
+            'name': machine['name'],
             'display_name': machine['display_name'],
             'is_online': is_online,
             'slots': []
         }
 
         for slot in machine_slots:
-            slot_item = adapter.get_item(slot['item'])
-            machine_contents['slots'].append({
-                "number": slot['number'],
-                "active": slot['active'],
-                "count": slot['count'],
-                "empty": slot_status[slot['number']-1]['empty'],
-                "item": {
-                    "name": slot_item['name'],
-                    "price": slot_item['price'],
-                    "id": slot_item['id'],
-                },
+            slot['empty'] = slot_status[slot['number']-1]['empty']
+            machine_contents['slots'].append(slot)
 
-            })
         response['machines'].append(machine_contents)
         logger.debug('Fetched all available details for {}'.format(machine['name']))
 
@@ -162,7 +154,7 @@ def drop_drink(adapter, user = None):
 
     machine_hostname = '{}.csh.rit.edu'.format(machine.name)
     request_endpoint = 'https://{}/drop'.format(machine_hostname)
-    
+
     body = {
         "slot": slot.number
     }

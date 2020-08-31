@@ -119,3 +119,8 @@ dmypy.json
 data.db
 *.swp
 .idea/
+
+# In a perfect world I'd commit the workspace but the way vscode does the pipenv
+# selection isn't portable
+.vscode/
+mizu.code-workspace
