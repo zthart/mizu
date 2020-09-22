@@ -15,7 +15,6 @@ OIDC_ISSUER = env.get('MIZU_OIDC_ISSUER', 'https://sso.csh.rit.edu/auth/realms/c
 OIDC_CLIENT_ID = env.get('MIZU_OIDC_CLIENT_ID', 'drink')
 OIDC_CLIENT_SECRET = env.get('MIZU_OIDC_CLIENT_SECRET', '')
 
-LDAP_URL = env.get('MIZU_LDAP_URL', 'ldaps://ipa01-nrh.csh.rit.edu:636')
 LDAP_BIND_DN = env.get('MIZU_BIND_DN',
 'krbprincipalname=drink/drink.csh.rit.edu@CSH.RIT.EDU,cn=services,cn=accounts,dc=csh,dc=rit,dc=edu')
 LDAP_BIND_PW = env.get('MIZU_BIND_PW', '')
