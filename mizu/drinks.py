@@ -24,7 +24,45 @@ from mizu import logger
 
 import requests
 
+from multiprocessing import Pool
+
 drinks_bp = Blueprint('drinks_bp', __name__)
+
+def query_machine(machine):
+    logger.debug('Querying machine details for {}'.format(machine['name']))
+    machine_slots = adapter.get_slots_in_machine(machine['name'])
+
+    is_online = True
+
+    try:
+        slot_status = _get_machine_status(machine['name'])
+    except requests.exceptions.ConnectionError:
+        # We couldn't connect to the machine
+        logger.debug('Machine {} is unreachable, reporting as offline'.format(machine['name']))
+        slot_status = [{'empty': True} for n in range(len(machine_slots))]
+        is_online = False  # seems a useful feature
+    except requests.exceptions.Timeout:
+        # We hit a timeout waiting for the machine to respond
+        logger.debug('Machine {} was reachable, but did not respond within a reasonable amount of time'.format(
+            machine['name']
+        ))
+        slot_status = [{'empty': True} for n in range(len(machine_slots))]
+        is_online = False
+
+    machine_contents = {
+        'id': machine['id'],
+        'name': machine['name'],
+        'display_name': machine['display_name'],
+        'is_online': is_online,
+        'slots': []
+    }
+
+    for slot in machine_slots:
+        slot['empty'] = slot_status[slot['number']-1]['empty']
+        machine_contents['slots'].append(slot)
+
+    logger.debug('Fetched all available details for {}'.format(machine['name']))
+    return machine_contents
 
 @drinks_bp.route('/drinks', methods=['GET'])
 @get_adapter
@@ -50,45 +88,12 @@ def current_drinks(adapter):
         machines = []
         machines.append(machine)
 
-    response = {
-        "machines": []
-    }
+    response = {}
 
-    for machine in machines:
-        logger.debug('Querying machine details for {}'.format(machine['name']))
-        machine_slots = adapter.get_slots_in_machine(machine['name'])
 
-        is_online = True
-
-        try:
-            slot_status = _get_machine_status(machine['name'])
-        except requests.exceptions.ConnectionError:
-            # We couldn't connect to the machine
-            logger.debug('Machine {} is unreachable, reporting as offline'.format(machine['name']))
-            slot_status = [{'empty': True} for n in range(len(machine_slots))]
-            is_online = False  # seems a useful feature
-        except requests.exceptions.Timeout:
-            # We hit a timeout waiting for the machine to respond
-            logger.debug('Machine {} was reachable, but did not respond within a reasonable amount of time'.format(
-                machine['name']
-            ))
-            slot_status = [{'empty': True} for n in range(len(machine_slots))]
-            is_online = False
-
-        machine_contents = {
-            'id': machine['id'],
-            'name': machine['name'],
-            'display_name': machine['display_name'],
-            'is_online': is_online,
-            'slots': []
-        }
-
-        for slot in machine_slots:
-            slot['empty'] = slot_status[slot['number']-1]['empty']
-            machine_contents['slots'].append(slot)
-
-        response['machines'].append(machine_contents)
-        logger.debug('Fetched all available details for {}'.format(machine['name']))
+    with Pool(5) as p:
+        contents = p.map(query_machine, machines)
+        response['machines'] = contents
 
     response['message'] = 'Successfully retrieved machine contents for {}'.format(
         ', '.join([machine['name'] for machine in machines])
